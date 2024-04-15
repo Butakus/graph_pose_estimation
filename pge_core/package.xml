@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>pge_core</name>
+  <version>0.0.0</version>
+  <description>PGE Core library</description>
+  <maintainer email="butakus@gmail.com">Francisco Miguel Moreno</maintainer>
+  <license>LPGL</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>detection_msgs</depend>
+  <depend>eigen</depend>
+  <depend>libg2o</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
