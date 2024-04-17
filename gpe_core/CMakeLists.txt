@@ -20,21 +20,19 @@ target_include_directories(se2_pose_estimation PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(se2_pose_estimation
+ament_target_dependencies(se2_pose_estimation PUBLIC
   rclcpp
   detection_msgs
 )
-target_link_libraries(se2_pose_estimation
+# TODO: Consider changing export visibility to PUBLIC if
+#       these libs are expected to be used by consuming targets
+target_link_libraries(se2_pose_estimation PRIVATE
   Eigen3::Eigen
   g2o::core
   g2o::types_sba
   g2o::solver_dense
   g2o::solver_cholmod
 )
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(se2_pose_estimation PRIVATE "GPE_CORE_BUILDING_LIBRARY")
 
 install(
   DIRECTORY include/
@@ -52,11 +50,11 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
   # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
+  # set(ament_cmake_copyright_FOUND TRUE)
   # the following line skips cpplint (only works in a git repo)
   # comment the line when this package is in a git repo and when
   # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
+  # set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
 
