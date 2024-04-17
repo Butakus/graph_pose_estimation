@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(pge_core)
+project(gpe_core)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -34,7 +34,7 @@ target_link_libraries(se2_pose_estimation
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(se2_pose_estimation PRIVATE "PGE_CORE_BUILDING_LIBRARY")
+target_compile_definitions(se2_pose_estimation PRIVATE "GPE_CORE_BUILDING_LIBRARY")
 
 install(
   DIRECTORY include/

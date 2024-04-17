@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>pge_core</name>
+  <name>gpe_core</name>
   <version>0.0.0</version>
-  <description>PGE Core library</description>
+  <description>GPE Core library</description>
   <maintainer email="butakus@gmail.com">Francisco Miguel Moreno</maintainer>
   <license>LPGL</license>
 

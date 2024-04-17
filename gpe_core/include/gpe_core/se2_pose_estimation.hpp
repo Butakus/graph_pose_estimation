@@ -1,7 +1,7 @@
-#ifndef PGE_CORE__SE2_POSE_ESTIMATION_HPP_
-#define PGE_CORE__SE2_POSE_ESTIMATION_HPP_
+#ifndef GPE_CORE__SE2_POSE_ESTIMATION_HPP_
+#define GPE_CORE__SE2_POSE_ESTIMATION_HPP_
 
-#include "pge_core/visibility_control.h"
+#include "gpe_core/visibility_control.h"
 
 #include <Eigen/StdVector>
 #include <Eigen/Dense>
@@ -21,7 +21,7 @@
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2_pointxy.h>
 
-namespace pge_core
+namespace gpe_core
 {
 
 class SE2PoseEstimation
@@ -32,6 +32,6 @@ public:
   virtual ~SE2PoseEstimation();
 };
 
-}  // namespace pge_core
+}  // namespace gpe_core
 
-#endif  // PGE_CORE__SE2_POSE_ESTIMATION_HPP_
+#endif  // GPE_CORE__SE2_POSE_ESTIMATION_HPP_
