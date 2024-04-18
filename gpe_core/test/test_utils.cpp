@@ -15,18 +15,23 @@
 //
 //  Author: Francisco Miguel Moreno
 
-#include "gpe_core/se2_pose_estimation.hpp"
+#include <gtest/gtest.h>
 #include <gpe_core/utils.hpp>
 
 namespace gpe
 {
 
-SE2PoseEstimation::SE2PoseEstimation()
+TEST(GPEUtilsTests, TestDegToRad)
 {
-}
-
-SE2PoseEstimation::~SE2PoseEstimation()
-{
+  double d1 = 0.0;
+  ASSERT_EQ(deg_to_rad(d1), 0.0);
 }
 
 }  // namespace gpe
+
+
+int main(int argc, char ** argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

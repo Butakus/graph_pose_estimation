@@ -31,12 +31,13 @@
 #include <g2o/types/slam2d/vertex_point_xy.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2_pointxy.h>
+// #include <tf2/LinearMath/Quaternion.h>
 
 #include <iostream>
 #include <vector>
 #include <cmath>
 
-namespace gpe_core
+namespace gpe
 {
 
 class SE2PoseEstimation
@@ -47,6 +48,6 @@ public:
   virtual ~SE2PoseEstimation();
 };
 
-}  // namespace gpe_core
+}  // namespace gpe
 
 #endif  // GPE_CORE__SE2_POSE_ESTIMATION_HPP_
