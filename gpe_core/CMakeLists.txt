@@ -40,12 +40,12 @@ ament_target_dependencies(se2_pose_estimation PUBLIC
 )
 # TODO: Consider changing export visibility to PUBLIC if
 #       these libs are expected to be used by consuming targets
-target_link_libraries(se2_pose_estimation PRIVATE
+target_link_libraries(se2_pose_estimation PUBLIC
   Eigen3::Eigen
-  g2o::core
-  g2o::types_sba
-  g2o::solver_dense
+  # g2o::core # Core is already exported by other g2o targets
+  g2o::types_slam2d
   g2o::solver_cholmod
+  PRIVATE
   gpe_utils
 )
 
