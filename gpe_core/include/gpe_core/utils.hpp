@@ -66,16 +66,11 @@ constexpr double rad_to_deg(const double rad)
   return 180.0 * rad / M_PI;
 }
 
-/** Smooth error function f(x) = x / (k + abs(x)), where k is the smoothness parameter */
-constexpr double smooth(const double x, const double smoothness)
-{
-  return x / (smoothness + std::abs(x));
-}
-
-/** Angle normalization to [0-360] range */
+/** Angle normalization to [0-2PI] range (in radians) */
 constexpr double norm_angle(const double angle)
 {
-  return angle < 0 ? angle + deg_to_rad(360.0) : angle;
+  double normalized_angle = std::fmod(angle, 2 * M_PI);
+  return normalized_angle < 0 ? normalized_angle + deg_to_rad(360.0) : normalized_angle;
 }
 
 

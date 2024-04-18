@@ -21,10 +21,84 @@
 namespace gpe
 {
 
-TEST(GPEUtilsTests, TestDegToRad)
+TEST(GPEUtilsTests, test_deg_to_rad)
 {
-  double d1 = 0.0;
-  ASSERT_EQ(deg_to_rad(d1), 0.0);
+  ASSERT_EQ(deg_to_rad(0.0), 0.0);
+  ASSERT_EQ(deg_to_rad(180.0), M_PI);
+  ASSERT_EQ(deg_to_rad(360.0), 2 * M_PI);
+}
+
+TEST(GPEUtilsTests, test_rad_to_deg)
+{
+  ASSERT_EQ(rad_to_deg(0.0), 0.0);
+  ASSERT_EQ(rad_to_deg(M_PI), 180.0);
+  ASSERT_EQ(rad_to_deg(2 * M_PI), 360.0);
+}
+
+TEST(GPEUtilsTests, test_deg_to_rad_to_deg)
+{
+  double num_deg = 145.7;
+  ASSERT_EQ(rad_to_deg(deg_to_rad(num_deg)), num_deg);
+
+  double num_rad = 1.41;
+  ASSERT_EQ(deg_to_rad(rad_to_deg(num_rad)), num_rad);
+}
+
+TEST(GPEUtilsTests, test_deg_to_rad_types)
+{
+  float f_num = 180.0;
+  ASSERT_EQ(deg_to_rad(f_num), M_PI);
+
+  int i_num = 180;
+  ASSERT_EQ(deg_to_rad(i_num), M_PI);
+}
+
+TEST(GPEUtilsTests, test_norm_angle)
+{
+  double num = 1.6;
+  ASSERT_EQ(norm_angle(num), 1.6);
+
+  double over_num = 10.0;
+  ASSERT_NEAR(norm_angle(over_num), 3.71681, 1e-4);
+
+  double negative_num = -M_PI;
+  ASSERT_NEAR(norm_angle(negative_num), M_PI, 1e-4);
+}
+
+TEST(GPEUtilsTests, test_quaternion_from_yaw)
+{
+  double yaw_zero = 0.0;
+  geometry_msgs::msg::Quaternion q1 = quaternion_msg_from_yaw(yaw_zero);
+  // std::cout << "quat 1: " << q1.x << ", " << q1.y << ", " << q1.z << ", " << q1.w << std::endl;
+  ASSERT_EQ(q1.x, 0.0);
+  ASSERT_EQ(q1.y, 0.0);
+  ASSERT_EQ(q1.z, 0.0);
+  ASSERT_EQ(q1.w, 1.0);
+
+  double yaw_pi = M_PI / 2;
+  geometry_msgs::msg::Quaternion q2 = quaternion_msg_from_yaw(yaw_pi);
+  // std::cout << "quat 2: " << q2.x << ", " << q2.y << ", " << q2.z << ", " << q2.w << std::endl;
+  ASSERT_EQ(q2.x, 0.0);
+  ASSERT_EQ(q2.y, 0.0);
+  ASSERT_DOUBLE_EQ(q2.z, std::sqrt(2) / 2);
+  ASSERT_DOUBLE_EQ(q2.w, std::sqrt(2) / 2);
+}
+
+TEST(GPEUtilsTests, test_yaw_from_quaternion)
+{
+  geometry_msgs::msg::Quaternion q1;
+  q1.x = 0.0;
+  q1.y = 0.0;
+  q1.z = 0.0;
+  q1.w = 1.0;
+  ASSERT_DOUBLE_EQ(yaw_from_quaternion(q1), 0.0);
+
+  geometry_msgs::msg::Quaternion q2;
+  q2.x = 0.0;
+  q2.y = 0.0;
+  q2.z = std::sqrt(2) / 2;
+  q2.w = std::sqrt(2) / 2;
+  ASSERT_DOUBLE_EQ(yaw_from_quaternion(q2), M_PI / 2);
 }
 
 }  // namespace gpe
