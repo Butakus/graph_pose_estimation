@@ -74,7 +74,9 @@ TEST(SE2PoseEstimationTests, legacy_test)
 
   // Generate test landmarks and add them to the estimator
   std::vector<Eigen::Vector2d> landmark_points = generate_landmark_points();
-  estimator.add_landmarks(landmark_points);
+  for (size_t i = 0; i < landmark_points.size(); i++) {
+    estimator.add_landmark(landmark_points[i], i);
+  }
 
   // std::cout << "Landmark points (ground truth): " << std::endl;
   // for (const auto & l : estimator.get_landmarks()) {
@@ -102,7 +104,7 @@ TEST(SE2PoseEstimationTests, legacy_test)
     Eigen::Matrix2d inf_matrix;
     compute_landmark_measurement(robot_pose_gt, landmark_points[i], measurement, inf_matrix);
 
-    estimator.add_measurement(measurement, inf_matrix, i + 1);
+    estimator.add_measurement(measurement, inf_matrix, i);
   }
   g2o::SE2 robot_pose = estimator.estimate();
   // std::cout << "robot pose (estimated):" << std::endl;

@@ -40,35 +40,77 @@ namespace gpe
 class SE2PoseEstimation
 {
 public:
+  /** Default constructor */
   SE2PoseEstimation();
+  /** Constructor with a given set of landmarks */
+  SE2PoseEstimation(const std::vector<Eigen::Vector2d> & landmarks);
+  /** Constructor with a given set of landmarks and IDs */
+  SE2PoseEstimation(
+    const std::vector<Eigen::Vector2d> & landmarks,
+    const std::vector<unsigned long> & ids
+  );
 
   virtual ~SE2PoseEstimation();
 
+  /** Add a new landmark to the graph */
   void add_landmark(const Eigen::Vector2d & landmark);
+  /** Add a new landmark to the graph with the given ID.
+      Returns false if the ID already exists.
+  */
+  void add_landmark(const Eigen::Vector2d & landmark, const unsigned long id);
+  /** Add new landmarks to the graph */
   void add_landmarks(const std::vector<Eigen::Vector2d> & landmarks);
+  /** Add a new landmarks to the graph with a list of IDs.
+     Sizes must match and IDs must be unique.
+  */
+  void add_landmarks(
+    const std::vector<Eigen::Vector2d> & landmarks,
+    const std::vector<unsigned long> & ids
+  );
+  /** Get the current list of landmarks */
   inline std::vector<Eigen::Vector2d> get_landmarks() const {return landmarks_;}
 
+  /** Set the initial pose estimation.
+      Calling this function will remove all measurements.
+  */
   void set_initial_pose(const g2o::SE2 & initial_pose);
 
+  /** Add a new measurement with its information matrix */
   void add_measurement(
     const Eigen::Vector2d & measurement,
     const Eigen::Matrix2d & inf_matrix
   );
 
+  /** Add a new measurement with its information matrix and the ID of the landmark */
   void add_measurement(
     const Eigen::Vector2d & measurement,
     const Eigen::Matrix2d & inf_matrix,
     const unsigned long landmark_id
   );
 
-  void reset_graph();
+  /** Remove all measurements from the graph */
+  void reset_measurements();
 
+  /** Run the optimization and return the estimated pose.
+      The estimated pose is saved as the initial estimation for the next call.
+  */
   g2o::SE2 estimate();
 
+  /** Return a reference to the G2O optimizer object. Use with caution! */
   g2o::SparseOptimizer & get_optimizer() {return optimizer_;}
 
+  /** Check if the ID is already taken */
+  bool check_id(const unsigned long id);
+
 private:
-  void add_landmark_to_graph(const Eigen::Vector2d & landmark);
+  /** Initialize G2O optimizer objects */
+  void initialize_optimizer();
+
+  /** Increase the ID counter used for the IDs.
+      This checks if the next ID is already taken by the user to skip it.
+   */
+  void increase_node_id();
+
   // State (map and poses)
   std::vector<Eigen::Vector2d> landmarks_;
   g2o::SE2 initial_pose_estimate_;
@@ -76,7 +118,7 @@ private:
   // G2O graph IDs and lookup tables
   unsigned long node_id_;  // Node IDs start at 1. ID 0 is reserved for initial estimate.
   std::vector<unsigned long> landmark_ids_;
-  std::vector<unsigned long> pose_ids_;
+  unsigned long pose_id_;
   // Optimization objects
   g2o::SparseOptimizer optimizer_;
 };

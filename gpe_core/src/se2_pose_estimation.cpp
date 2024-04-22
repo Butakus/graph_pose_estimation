@@ -22,7 +22,32 @@ namespace gpe
 {
 
 SE2PoseEstimation::SE2PoseEstimation()
-: node_id_(1)
+: node_id_{0}, pose_id_{1000}
+{
+  initialize_optimizer();
+}
+
+SE2PoseEstimation::SE2PoseEstimation(const std::vector<Eigen::Vector2d> & landmarks)
+: node_id_{0}, pose_id_{1000}
+{
+  initialize_optimizer();
+  add_landmarks(landmarks);
+}
+
+SE2PoseEstimation::SE2PoseEstimation(
+  const std::vector<Eigen::Vector2d> & landmarks,
+  const std::vector<unsigned long> & ids)
+: node_id_{0}, pose_id_{1000}
+{
+  initialize_optimizer();
+  add_landmarks(landmarks, ids);
+}
+
+SE2PoseEstimation::~SE2PoseEstimation()
+{
+}
+
+void SE2PoseEstimation::initialize_optimizer()
 {
   // Setup optimizer algorithm and solver
   optimizer_.setVerbose(false);
@@ -40,17 +65,28 @@ SE2PoseEstimation::SE2PoseEstimation()
     new g2o::OptimizationAlgorithmLevenberg(
     g2o::make_unique<SlamBlockSolver>(std::move(linearSolver)));
   optimizer_.setAlgorithm(solver);
-
-}
-
-SE2PoseEstimation::~SE2PoseEstimation()
-{
 }
 
 void SE2PoseEstimation::add_landmark(const Eigen::Vector2d & landmark)
 {
+  increase_node_id();
   landmarks_.push_back(landmark);
-  add_landmark_to_graph(landmark);
+  add_landmark(landmark, node_id_);
+}
+
+void SE2PoseEstimation::add_landmark(
+  const Eigen::Vector2d & landmark,
+  const unsigned long id)
+{
+  // TODO: Check if ID exists. Change pose_id_ if there is conflict.
+  landmarks_.push_back(landmark);
+  // Add landmark vertex to optimizer
+  g2o::VertexPointXY * landmark_vertex = new g2o::VertexPointXY;
+  landmark_vertex->setId(id);
+  landmark_ids_.push_back(id);
+  landmark_vertex->setFixed(true);
+  landmark_vertex->setEstimate(landmark);
+  optimizer_.addVertex(landmark_vertex);
 }
 
 void SE2PoseEstimation::add_landmarks(const std::vector<Eigen::Vector2d> & landmarks)
@@ -61,35 +97,43 @@ void SE2PoseEstimation::add_landmarks(const std::vector<Eigen::Vector2d> & landm
   }
 }
 
-void SE2PoseEstimation::add_landmark_to_graph(const Eigen::Vector2d & landmark)
+void SE2PoseEstimation::add_landmarks(
+  const std::vector<Eigen::Vector2d> & landmarks,
+  const std::vector<unsigned long> & ids
+)
 {
-  // Add landmark vertex to optimizer
-  g2o::VertexPointXY * landmark_vertex = new g2o::VertexPointXY;
-  landmark_vertex->setId(node_id_);
-  landmark_ids_.push_back(node_id_);
-  node_id_++;
-  landmark_vertex->setFixed(true);
-  landmark_vertex->setEstimate(landmark);
-  optimizer_.addVertex(landmark_vertex);
+  // TODO
+  (void) landmarks;
+  (void) ids;
 }
 
-/** Removes all elements from the graph except the landmark */
-void SE2PoseEstimation::reset_graph()
+bool SE2PoseEstimation::check_id(const unsigned long id)
 {
-  // TODO: Remove everything, reset ID counter, and add the landmarks again to the graph
+  return std::find(landmark_ids_.cbegin(), landmark_ids_.cend(), id) != landmark_ids_.cend();
 }
+
+void SE2PoseEstimation::increase_node_id()
+{
+  node_id_++;
+  while (node_id_ == pose_id_ || check_id(node_id_)) {
+    node_id_++;
+  }
+}
+
 
 void SE2PoseEstimation::set_initial_pose(const g2o::SE2 & initial_pose)
 {
-  // TODO: Setting the initial pose should reset all poses (call reset_graph)
+  // TODO: Setting the initial pose should reset all poses (call reset_measurements)
   initial_pose_estimate_ = initial_pose;
 
   // Set vertex from robot pose (initial guess)
+  // TODO: It should remove the previous vertex (if any) or reset its ID
   g2o::VertexSE2 * robot_pose_vertex = new g2o::VertexSE2;
-  robot_pose_vertex->setId(0);  // Initial pose estimate always has ID zero
+  robot_pose_vertex->setId(pose_id_);  // Initial pose estimate always has ID zero
   robot_pose_vertex->setEstimate(initial_pose);
   optimizer_.addVertex(robot_pose_vertex);
 }
+
 
 void SE2PoseEstimation::add_measurement(
   const Eigen::Vector2d & measurement,
@@ -106,12 +150,17 @@ void SE2PoseEstimation::add_measurement(
   const unsigned long landmark_id)
 {
   g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY;
-  landmark_observation->vertices()[0] = optimizer_.vertex(0);
-  landmark_observation->vertices()[1] = optimizer_.vertex(landmark_id);  // TODO: Fix
+  landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
+  landmark_observation->vertices()[1] = optimizer_.vertex(landmark_id);
 
   landmark_observation->setMeasurement(measurement);
   landmark_observation->setInformation(inf_matrix);
   optimizer_.addEdge(landmark_observation);
+}
+
+void SE2PoseEstimation::reset_measurements()
+{
+  // TODO: Iterate over all measurements and remove them from the graph
 }
 
 
@@ -122,8 +171,10 @@ g2o::SE2 SE2PoseEstimation::estimate()
   optimizer_.optimize(100);
 
   // Compute error
-  g2o::VertexSE2 * pose_vertex = dynamic_cast<g2o::VertexSE2 *>(optimizer_.vertex(0));
+  g2o::VertexSE2 * pose_vertex = dynamic_cast<g2o::VertexSE2 *>(optimizer_.vertex(pose_id_));
   return pose_vertex->estimate();
+
+  // TODO: Update initial_pose for next iteration
 }
 
 } // namespace gpe
