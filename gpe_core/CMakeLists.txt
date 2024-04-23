@@ -26,6 +26,15 @@ ament_target_dependencies(gpe_utils INTERFACE
   geometry_msgs
 )
 
+add_library(gpe_hungarian SHARED
+  src/hungarian.cpp
+)
+target_compile_features(gpe_hungarian PUBLIC cxx_std_17)
+target_include_directories(gpe_hungarian PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 add_library(se2_pose_estimation SHARED
   src/se2_pose_estimation.cpp
 )
@@ -46,7 +55,7 @@ target_link_libraries(se2_pose_estimation PUBLIC
   g2o::types_slam2d
   g2o::solver_cholmod
   PRIVATE
-  gpe_utils
+  gpe_hungarian
 )
 
 install(
@@ -54,7 +63,7 @@ install(
   DESTINATION include
 )
 install(
-  TARGETS se2_pose_estimation
+  TARGETS se2_pose_estimation gpe_hungarian
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

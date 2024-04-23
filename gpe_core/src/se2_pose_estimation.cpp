@@ -15,8 +15,8 @@
 //
 //  Author: Francisco Miguel Moreno
 
-#include "gpe_core/se2_pose_estimation.hpp"
-#include <gpe_core/utils.hpp>
+#include <gpe_core/se2_pose_estimation.hpp>
+#include <gpe_core/hungarian.hpp>
 
 #include <unordered_set>
 
@@ -177,6 +177,9 @@ void SE2PoseEstimation::add_measurement(
   const Eigen::Matrix2d & inf_matrix)
 {
   // TODO: Association required
+  // Problem: Here we only have one measurement.
+  // Association should be executed in the estimate() call
+  // with all the non-associated measurements.
   (void) measurement;
   (void) inf_matrix;
 }
