@@ -50,20 +50,19 @@ public:
     const std::vector<unsigned long> & ids
   );
 
-  virtual ~SE2PoseEstimation();
-
   /** Add a new landmark to the graph */
   void add_landmark(const Eigen::Vector2d & landmark);
   /** Add a new landmark to the graph with the given ID.
       Returns false if the ID already exists.
   */
-  void add_landmark(const Eigen::Vector2d & landmark, const unsigned long id);
+  bool add_landmark(const Eigen::Vector2d & landmark, const unsigned long id);
   /** Add new landmarks to the graph */
   void add_landmarks(const std::vector<Eigen::Vector2d> & landmarks);
   /** Add a new landmarks to the graph with a list of IDs.
      Sizes must match and IDs must be unique.
+     This is an atomic operation. All IDs must be valid.
   */
-  void add_landmarks(
+  bool add_landmarks(
     const std::vector<Eigen::Vector2d> & landmarks,
     const std::vector<unsigned long> & ids
   );
@@ -96,11 +95,14 @@ public:
   */
   g2o::SE2 estimate();
 
+  /** Returns the last estimated pose */
+  g2o::SE2 pose() const {return pose_;}
+
   /** Return a reference to the G2O optimizer object. Use with caution! */
   g2o::SparseOptimizer & get_optimizer() {return optimizer_;}
 
-  /** Check if the ID is already taken */
-  bool check_id(const unsigned long id);
+  /** Check if the ID is already taken by a landmark */
+  bool is_landmark_id(const unsigned long id);
 
 private:
   /** Initialize G2O optimizer objects */
@@ -108,17 +110,23 @@ private:
 
   /** Increase the ID counter used for the IDs.
       This checks if the next ID is already taken by the user to skip it.
-   */
+  */
   void increase_node_id();
+  /** Changes the ID used for the pose.
+      This function is called whenever a new landmark needs the ID used by the pose.
+  */
+  void update_pose_id();
 
   // State (map and poses)
-  std::vector<Eigen::Vector2d> landmarks_;
-  g2o::SE2 initial_pose_estimate_;
+  std::vector<Eigen::Vector2d> landmarks_;  // TODO: Probably not needed?
+  g2o::SE2 pose_;
 
   // G2O graph IDs and lookup tables
-  unsigned long node_id_;  // Node IDs start at 1. ID 0 is reserved for initial estimate.
+  // ID counter used for landmarks. Starts at zero.
+  unsigned long node_id_ = 0;
   std::vector<unsigned long> landmark_ids_;
-  unsigned long pose_id_;
+  // ID used for the pose. Defaults to 1000 but can change if a landmark uses that number.
+  unsigned long pose_id_ = 1000;
   // Optimization objects
   g2o::SparseOptimizer optimizer_;
 };

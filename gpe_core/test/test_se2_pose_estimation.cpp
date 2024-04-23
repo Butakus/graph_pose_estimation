@@ -68,7 +68,7 @@ void compute_landmark_measurement(
   inf_matrix = Eigen::Matrix2d::Identity() * 10;
 }
 
-TEST(SE2PoseEstimationTests, legacy_test)
+TEST(SE2PoseEstimationTests, simple_estimation_test)
 {
   gpe::SE2PoseEstimation estimator;
 
@@ -78,22 +78,9 @@ TEST(SE2PoseEstimationTests, legacy_test)
     estimator.add_landmark(landmark_points[i], i);
   }
 
-  // std::cout << "Landmark points (ground truth): " << std::endl;
-  // for (const auto & l : estimator.get_landmarks()) {
-  //   std::cout << "* " << l.transpose() << std::endl;
-  // }
-
   // Create the robot pose and generate an initial estimation
   g2o::SE2 robot_pose_gt(10.0, 11.0, gpe::deg_to_rad(90.0));
   g2o::SE2 robot_pose_initial_guess(7.7, 6.0, gpe::deg_to_rad(65.0));
-  // std::cout << "Robot pose (ground truth):" << std::endl;
-  // std::cout <<
-  //   robot_pose_gt.translation().transpose() << " | " <<
-  //   robot_pose_gt.rotation().angle() << std::endl;
-  // std::cout << "Robot pose (initial guess):" << std::endl;
-  // std::cout <<
-  //   robot_pose_initial_guess.translation().transpose() << " | " <<
-  //   robot_pose_initial_guess.rotation().angle() << std::endl;
 
   // Set the initial pose estimation
   estimator.set_initial_pose(robot_pose_initial_guess);
@@ -107,15 +94,63 @@ TEST(SE2PoseEstimationTests, legacy_test)
     estimator.add_measurement(measurement, inf_matrix, i);
   }
   g2o::SE2 robot_pose = estimator.estimate();
-  // std::cout << "robot pose (estimated):" << std::endl;
-  // std::cout << robot_pose.translation().transpose() << " | "
-  //           << robot_pose.rotation().angle() << std::endl;
 
   ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.2);
   ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.2);
   ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
 }
 
+TEST(SE2PoseEstimationTests, add_landmark_test)
+{
+  // Add two landmarks with the same ID
+  gpe::SE2PoseEstimation estimator;
+  Eigen::Vector2d l1{1.0, 1.0};
+  Eigen::Vector2d l2{2.0, 2.0};
+  bool result_1 = estimator.add_landmark(l1, 1);
+  bool result_2 = estimator.add_landmark(l2, 1);
+
+  ASSERT_EQ(result_1, true);
+  ASSERT_EQ(result_2, false);
+  ASSERT_EQ(estimator.get_landmarks().size(), 1);
+}
+
+TEST(SE2PoseEstimationTests, add_landmark_list_test)
+{
+  // Pass a list of IDs with different size than landmarks
+  gpe::SE2PoseEstimation estimator;
+  std::vector<Eigen::Vector2d> landmark_points = generate_landmark_points();
+  std::vector<unsigned long> ids = {1, 2, 3};
+  ASSERT_DEATH(
+    estimator.add_landmarks(landmark_points, ids),
+    "Vector of landmarks and IDs size mismatch");
+  ASSERT_EQ(estimator.get_landmarks().size(), 0);
+
+  // Try again with duplicate IDs
+  ids.clear();
+  for (size_t i = 0; i < landmark_points.size(); i++) {
+    ids.push_back(i);
+  }
+  ids.back() = ids.front();
+  bool result = estimator.add_landmarks(landmark_points, ids);
+  ASSERT_EQ(result, false);
+  ASSERT_EQ(estimator.get_landmarks().size(), 0);
+
+  // Try again with good IDs
+  ids.clear();
+  for (size_t i = 0; i < landmark_points.size(); i++) {
+    ids.push_back(i);
+  }
+  estimator.add_landmarks(landmark_points, ids);
+  ASSERT_EQ(estimator.get_landmarks().size(), ids.size());
+
+  // Now add IDs where the pose_id_ should be (it should be ok)
+  ids.clear();
+  for (size_t i = 0; i < landmark_points.size(); i++) {
+    ids.push_back(1000 + i);
+  }
+  estimator.add_landmarks(landmark_points, ids);
+  ASSERT_EQ(estimator.get_landmarks().size(), 2 * ids.size());
+}
 
 int main(int argc, char ** argv)
 {
