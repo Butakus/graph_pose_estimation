@@ -108,6 +108,11 @@ private:
   /** Initialize G2O optimizer objects */
   void initialize_optimizer();
 
+  /** Run the association algorithm to find the corresponding
+      landmark IDs for the measurements without one
+   */
+  void associate_detached_measurements();
+
   /** Increase the ID counter used for the IDs.
       This checks if the next ID is already taken by the user to skip it.
   */
@@ -118,8 +123,10 @@ private:
   void update_pose_id();
 
   // State (map and poses)
-  std::vector<Eigen::Vector2d> landmarks_;  // TODO: Probably not needed?
   g2o::SE2 pose_;
+  std::vector<Eigen::Vector2d> landmarks_;  // TODO: Probably not needed?
+  // List of measurements that are not associated yet to any landmark
+  std::vector<g2o::EdgeSE2PointXY *> detached_measurements_;
 
   // G2O graph IDs and lookup tables
   // ID counter used for landmarks. Starts at zero.

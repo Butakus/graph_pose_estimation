@@ -100,6 +100,75 @@ TEST(SE2PoseEstimationTests, simple_estimation_test)
   ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
 }
 
+// Add test with measurements without pre-assigned ID to test hungarian assignation
+TEST(SE2PoseEstimationTests, measurement_association_test)
+{
+  gpe::SE2PoseEstimation estimator;
+
+  // Generate test landmarks and add them to the estimator
+  std::vector<Eigen::Vector2d> landmark_points = generate_landmark_points();
+  estimator.add_landmarks(landmark_points);
+
+  // Create the robot pose and generate an initial estimation
+  g2o::SE2 robot_pose_gt(10.0, 11.0, gpe::deg_to_rad(90.0));
+  g2o::SE2 robot_pose_initial_guess(7.7, 6.0, gpe::deg_to_rad(65.0));
+
+  // Set the initial pose estimation
+  estimator.set_initial_pose(robot_pose_initial_guess);
+
+  // Set measurements (graph edges)
+  for (size_t i = 0; i < landmark_points.size(); i++) {
+    Eigen::Vector2d measurement;
+    Eigen::Matrix2d inf_matrix;
+    compute_landmark_measurement(robot_pose_gt, landmark_points[i], measurement, inf_matrix);
+
+    estimator.add_measurement(measurement, inf_matrix);
+  }
+  g2o::SE2 robot_pose = estimator.estimate();
+
+  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.2);
+  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.2);
+  ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
+}
+
+// Some measurements have ID, others must be associated
+TEST(SE2PoseEstimationTests, measurement_mixed_association_test)
+{
+  gpe::SE2PoseEstimation estimator;
+
+  // Generate test landmarks and add them to the estimator
+  std::vector<Eigen::Vector2d> landmark_points = generate_landmark_points();
+  for (size_t i = 0; i < landmark_points.size(); i++) {
+    estimator.add_landmark(landmark_points[i], i);
+  }
+
+  // Create the robot pose and generate an initial estimation
+  g2o::SE2 robot_pose_gt(10.0, 11.0, gpe::deg_to_rad(90.0));
+  g2o::SE2 robot_pose_initial_guess(7.7, 6.0, gpe::deg_to_rad(65.0));
+
+  // Set the initial pose estimation
+  estimator.set_initial_pose(robot_pose_initial_guess);
+
+  // Set measurements (graph edges)
+  for (size_t i = 0; i < landmark_points.size(); i++) {
+    Eigen::Vector2d measurement;
+    Eigen::Matrix2d inf_matrix;
+    compute_landmark_measurement(robot_pose_gt, landmark_points[i], measurement, inf_matrix);
+
+    if (i % 2) {
+      estimator.add_measurement(measurement, inf_matrix);
+    } else {
+      estimator.add_measurement(measurement, inf_matrix, i);
+    }
+  }
+  g2o::SE2 robot_pose = estimator.estimate();
+
+  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.2);
+  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.2);
+  ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
+}
+
+
 TEST(SE2PoseEstimationTests, add_landmark_test)
 {
   // Add two landmarks with the same ID

@@ -46,7 +46,7 @@ SE2PoseEstimation::SE2PoseEstimation(
 void SE2PoseEstimation::initialize_optimizer()
 {
   // Setup optimizer algorithm and solver
-  optimizer_.setVerbose(true);
+  optimizer_.setVerbose(false);
 
   using SlamBlockSolver = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
   using SlamLinearSolver = g2o::LinearSolverCholmod<SlamBlockSolver::PoseMatrixType>;
@@ -176,12 +176,14 @@ void SE2PoseEstimation::add_measurement(
   const Eigen::Vector2d & measurement,
   const Eigen::Matrix2d & inf_matrix)
 {
-  // TODO: Association required
-  // Problem: Here we only have one measurement.
-  // Association should be executed in the estimate() call
-  // with all the non-associated measurements.
-  (void) measurement;
-  (void) inf_matrix;
+  g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY;
+
+  // The second vertex (landmark ID) will be set in the association step.
+  landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
+
+  landmark_observation->setMeasurement(measurement);
+  landmark_observation->setInformation(inf_matrix);
+  detached_measurements_.push_back(landmark_observation);
 }
 
 void SE2PoseEstimation::add_measurement(
@@ -206,9 +208,65 @@ void SE2PoseEstimation::reset_measurements()
   }
 }
 
+void SE2PoseEstimation::associate_detached_measurements()
+{
+  // Check which landmarks already have a measurement attached and skip them
+  std::vector<unsigned long> free_ids;
+  std::vector<Eigen::Vector2d> free_landmarks;
+  free_ids.reserve(landmark_ids_.size());
+  for (const auto & id : landmark_ids_) {
+    // Only use the landmarks that are not connected
+    auto landmark = dynamic_cast<g2o::VertexPointXY *>(optimizer_.vertex(id));
+    if (landmark->edges().size() == 0) {
+      free_ids.push_back(id);
+      free_landmarks.push_back(landmark->estimate());
+    }
+  }
+
+  // Initialize cost matrix
+  std::vector<std::vector<double>> cost_matrix(
+    detached_measurements_.size(),
+    std::vector<double>(free_ids.size())
+  );
+
+  // Compute measurement errors and build the cost matrix
+  for (size_t i = 0; i < detached_measurements_.size(); i++) {
+    for (size_t j = 0; j < free_ids.size(); j++) {
+      detached_measurements_[i]->vertices()[1] = optimizer_.vertex(free_ids[j]);
+      // Use G2O error computation (_error is a Vector2d for this edge type)
+      detached_measurements_[i]->computeError();
+      // Use Chi square error: _error.dot(information() * _error)
+      cost_matrix[i][j] = detached_measurements_[i]->chi2();
+    }
+  }
+
+  gpe::HungarianAssignment hungarian(cost_matrix);
+  std::vector<size_t> assignment;
+  hungarian.assign(assignment);
+
+  // TODO: Maybe filter out outliers (false positives).
+  // Outliers are measurements associated to a landmark that is far.
+
+  // Go over the detached edges, set their assigned ID and add them to the graph
+  for (size_t i = 0; i < assignment.size(); i++) {
+    // Attach the measurement to the assigned landmark
+    auto assigned_landmark = optimizer_.vertex(free_ids[assignment[i]]);
+    detached_measurements_[i]->vertices()[1] = assigned_landmark;
+    // Recompute error to avoid a messed up state
+    detached_measurements_[i]->computeError();
+    // Add the edge to the optimizer, transfering ownership
+    optimizer_.addEdge(detached_measurements_[i]);
+  }
+  // We don't need these pointers anymore. Ownership is transfered to the Optimizer.
+  detached_measurements_.clear();
+}
 
 g2o::SE2 SE2PoseEstimation::estimate()
 {
+  // Run association algrithm to attach the measurements without landmark the graph
+  if (detached_measurements_.size() > 0) {
+    associate_detached_measurements();
+  }
   // Perform optimization
   optimizer_.initializeOptimization();
   optimizer_.optimize(100);
