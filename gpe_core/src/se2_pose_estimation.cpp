@@ -204,8 +204,15 @@ void SE2PoseEstimation::reset_measurements()
 {
   auto edges = optimizer_.edges();
   for (const auto & edge : edges) {
+    // This removes the edge from the graph and its connections to any vertex
     optimizer_.removeEdge(edge);
   }
+  // Measurements without ID are not stored in the optimizer.
+  // We must release the memory and clear the vector
+  for (auto & edge : detached_measurements_) {
+    delete edge;
+  }
+  detached_measurements_.clear();
 }
 
 void SE2PoseEstimation::associate_detached_measurements()
