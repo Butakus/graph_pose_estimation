@@ -88,6 +88,12 @@ bool SE2PoseEstimation::add_landmark(
   return true;
 }
 
+bool SE2PoseEstimation::add_landmark(const gpe_msgs::msg::Landmark & landmark_msg)
+{
+  Eigen::Vector2d landmark {landmark_msg.x, landmark_msg.y};
+  return add_landmark(landmark, landmark_msg.id);
+}
+
 void SE2PoseEstimation::add_landmarks(const std::vector<Eigen::Vector2d> & landmarks)
 {
   // Reserve space in vector of landmarks and IDs
@@ -128,6 +134,17 @@ bool SE2PoseEstimation::add_landmarks(
   }
 
   return true;
+}
+
+bool SE2PoseEstimation::add_landmarks(const gpe_msgs::msg::LandmarkArray & landmarks_msg)
+{
+  std::vector<Eigen::Vector2d> landmarks;
+  std::vector<unsigned long> ids;
+  for (const auto & landmark_msg : landmarks_msg.landmarks) {
+    landmarks.emplace_back(landmark_msg.x, landmark_msg.y);
+    ids.push_back(landmark_msg.id);
+  }
+  return add_landmarks(landmarks, ids);
 }
 
 

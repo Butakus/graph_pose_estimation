@@ -5,12 +5,13 @@
   <version>0.0.0</version>
   <description>GPE Core library</description>
   <maintainer email="butakus@gmail.com">Francisco Miguel Moreno</maintainer>
-  <license>LPGL</license>
+  <license>LGPL</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
   <depend>detection_msgs</depend>
+  <depend>gpe_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>tf2</depend>
   <depend>eigen</depend>

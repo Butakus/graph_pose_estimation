@@ -30,6 +30,8 @@
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2_pointxy.h>
 
+#include <gpe_msgs/msg/landmark_array.hpp>
+
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -56,6 +58,8 @@ public:
       Returns false if the ID already exists.
   */
   bool add_landmark(const Eigen::Vector2d & landmark, const unsigned long id);
+  /** Add a new landmark to the graph from the msg format */
+  bool add_landmark(const gpe_msgs::msg::Landmark & landmark_msg);
   /** Add new landmarks to the graph */
   void add_landmarks(const std::vector<Eigen::Vector2d> & landmarks);
   /** Add a new landmarks to the graph with a list of IDs.
@@ -66,6 +70,9 @@ public:
     const std::vector<Eigen::Vector2d> & landmarks,
     const std::vector<unsigned long> & ids
   );
+  /** Add new landmarks to the graph from the msg format */
+  bool add_landmarks(const gpe_msgs::msg::LandmarkArray & landmarks_msg);
+
   /** Get the current list of landmarks */
   inline std::vector<Eigen::Vector2d> get_landmarks() const {return landmarks_;}
 

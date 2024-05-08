@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 #include <gpe_core/se2_pose_estimation.hpp>
 #include <gpe_core/utils.hpp>
+#include <gpe_msgs/msg/landmark_array.hpp>
 
 
 static double uniform_rand(double low, double high)
@@ -220,6 +221,39 @@ TEST(SE2PoseEstimationTests, add_landmark_list_test)
   estimator.add_landmarks(landmark_points, ids);
   ASSERT_EQ(estimator.get_landmarks().size(), 2 * ids.size());
 }
+
+TEST(SE2PoseEstimationTests, add_landmark_msg_test)
+{
+  // Add two landmarks with the same ID
+  gpe::SE2PoseEstimation estimator;
+  gpe_msgs::msg::Landmark l;
+  l.id = 1;
+  l.x = 1.0;
+  l.y = 2.0;
+  bool result = estimator.add_landmark(l);
+
+  ASSERT_EQ(result, true);
+  ASSERT_EQ(estimator.get_landmarks().size(), 1);
+}
+
+TEST(SE2PoseEstimationTests, add_landmark_array_msg_test)
+{
+  // Add two landmarks with the same ID
+  gpe::SE2PoseEstimation estimator;
+  gpe_msgs::msg::LandmarkArray landmarks;
+  for (int i = 0; i < 5; i++) {
+    gpe_msgs::msg::Landmark l;
+    l.id = i;
+    l.x = 2 * i;
+    l.y = 2 * i + 1;
+    landmarks.landmarks.push_back(l);
+  }
+  bool result = estimator.add_landmarks(landmarks);
+
+  ASSERT_EQ(result, true);
+  ASSERT_EQ(estimator.get_landmarks().size(), 5);
+}
+
 
 int main(int argc, char ** argv)
 {

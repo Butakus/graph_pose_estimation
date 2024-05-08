@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(detection_msgs REQUIRED)
+find_package(gpe_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -46,6 +47,7 @@ target_include_directories(se2_pose_estimation PUBLIC
 ament_target_dependencies(se2_pose_estimation PUBLIC
   rclcpp
   detection_msgs
+  gpe_msgs
 )
 # TODO: Consider changing export visibility to PUBLIC if
 #       these libs are expected to be used by consuming targets
@@ -100,6 +102,7 @@ ament_export_dependencies(
   rclcpp
   tf2
   geometry_msgs
+  gpe_msgs
   g2o
   Eigen3
 )
