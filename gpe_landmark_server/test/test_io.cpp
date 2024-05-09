@@ -15,15 +15,27 @@
 //
 //  Author: Francisco Miguel Moreno
 
+#include <filesystem>
+
 #include <gtest/gtest.h>
 #include <gpe_landmark_server/landmark_io.hpp>
 
+namespace fs = std::filesystem;
 namespace gpe
 {
 
 TEST(LandmarkIOTests, file_parse_test)
 {
-  // TODO
+  using Landmark = gpe_msgs::msg::Landmark;
+  fs::path yaml_path = fs::path(TEST_DIRECTORY) / fs::path("test_landmarks.yaml");
+  std::unordered_map<int, Landmark> landmarks = load_landmarks(yaml_path);
+  ASSERT_NO_THROW(landmarks = load_landmarks(yaml_path));
+  ASSERT_EQ(landmarks.size(), 3);
+  for (const auto &[id, l] : landmarks) {
+    ASSERT_EQ(l.id, id);
+  }
+  ASSERT_EQ(landmarks[1].x, -1.0);
+  ASSERT_EQ(landmarks[1].y, 3.0);
 }
 
 

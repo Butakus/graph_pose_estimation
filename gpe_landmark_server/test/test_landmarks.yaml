@@ -13,7 +13,7 @@ frame_id: /map
 # NOTE: At this moment only PointXY landmarks are supported.
 # Coords: Array of coordinates. Length and meaning depend on type.
 landmarks:
-    - id: 0
+    - id: 8
       type: PointXY
       coords: [1.0, 2.0]
     - id: 1
