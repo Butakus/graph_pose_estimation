@@ -50,7 +50,7 @@ void SE2PoseEstimation::initialize_optimizer()
 
   using SlamBlockSolver = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>;
   using SlamLinearSolver = g2o::LinearSolverCholmod<SlamBlockSolver::PoseMatrixType>;
-  auto linearSolver = g2o::make_unique<SlamLinearSolver>();
+  auto linearSolver = std::make_unique<SlamLinearSolver>();
   linearSolver->setBlockOrdering(false);
 
   auto solver = std::make_unique<g2o::OptimizationAlgorithmLevenberg>(

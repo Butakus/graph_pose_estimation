@@ -24,6 +24,12 @@ ament_target_dependencies(gpe_landmark_io PUBLIC
   yaml_cpp_vendor
   gpe_msgs
 )
+target_link_libraries(gpe_landmark_io PUBLIC
+  # This should not be necessary because we have yaml_cpp_vendor,
+  # but it must be linked manually linked in Ubuntu 24.04 to avoid linker errors...
+  yaml-cpp
+)
+
 
 install(
   DIRECTORY include/
