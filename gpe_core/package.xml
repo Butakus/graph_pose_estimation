@@ -10,7 +10,6 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
-  <depend>detection_msgs</depend>
   <depend>gpe_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>tf2</depend>
