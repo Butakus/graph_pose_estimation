@@ -14,17 +14,26 @@ find_package(gpe_msgs REQUIRED)
 find_package(gpe_landmark_server REQUIRED)
 
 
+add_library(file_io INTERFACE)
+target_include_directories(file_io INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
 add_executable(se2_offline_estimation_node src/se2_offline_estimation_node.cpp)
 target_include_directories(se2_offline_estimation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_compile_features(se2_offline_estimation_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(se2_offline_estimation_node
+ament_target_dependencies(se2_offline_estimation_node PUBLIC
   gpe_core
   gpe_msgs
   rclcpp
   rcutils
   gpe_landmark_server
+)
+target_link_libraries(se2_offline_estimation_node PRIVATE
+  file_io
 )
 
 install(TARGETS se2_offline_estimation_node
@@ -42,8 +51,8 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 
-  # find_package(ament_cmake_gtest REQUIRED)
-  # add_subdirectory(test)
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
 ament_package()

@@ -21,6 +21,7 @@
 #include <gpe_msgs/msg/landmark.hpp>
 #include <gpe_landmark_server/landmark_io.hpp>
 #include <rcutils/cmdline_parser.h>
+#include <gpe_offline_estimation/file_io.hpp>
 
 namespace fs = std::filesystem;
 
@@ -31,16 +32,6 @@ void print_usage()
             << std::endl;
 }
 
-std::vector<fs::path> find_measurement_files(const fs::path & measurements_path)
-{
-  std::vector<fs::path> csv_files;
-  for (const auto & entry : fs::directory_iterator(measurements_path)) {
-    if (entry.is_regular_file() && entry.path().extension() == ".csv") {
-      csv_files.push_back(entry.path());
-    }
-  }
-  return csv_files;
-}
 
 int main(int argc, char ** argv)
 {
@@ -70,7 +61,7 @@ int main(int argc, char ** argv)
   }
 
   // Load measurements
-  auto measurement_files = find_measurement_files(measurements_path);
+  auto measurement_files = gpe::find_measurement_files(measurements_path);
   std::cout << "Number of measurement CSV files: " << measurement_files.size() << std::endl;
 
 
