@@ -18,7 +18,7 @@ import os
 
 LANDMARKS_FILE = "test_landmarks.yaml"
 MEASUREMENTS_DIR = "measurements"
-POSES_FILE = "poses.csv"
+POSES_FILE = "measurements/poses.csv"
 MAX_RANGE = 20.0
 ERROR_STD = 0.1
 

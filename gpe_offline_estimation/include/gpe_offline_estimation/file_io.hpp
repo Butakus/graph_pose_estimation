@@ -19,23 +19,88 @@
 #define GPE_OFFLINE_ESTIMATION__FILE_IO_HPP_
 
 #include <iostream>
-#include <vector>
+#include <fstream>
+#include <map>
+#include <unordered_map>
 #include <filesystem>
+#include <Eigen/Dense>
+#include <gpe_msgs/msg/landmark_detection.hpp>
 
 namespace gpe
 {
 
-/** Iterate a given directory (non-recursively) and return the path of all CSV files in it. */
-std::vector<std::filesystem::path> find_measurement_files(
+/** Iterate a given directory (non-recursively) and return the path of all CSV files in it.
+    Return a map where the keys are the timestamps and the values are the file paths.
+*/
+std::map<long, std::filesystem::path> find_measurement_files(
   const std::filesystem::path & measurements_path)
 {
-  std::vector<std::filesystem::path> csv_files;
+  std::map<long, std::filesystem::path> csv_files;
   for (const auto & entry : std::filesystem::directory_iterator(measurements_path)) {
-    if (entry.is_regular_file() && entry.path().extension() == ".csv") {
-      csv_files.push_back(entry.path());
+    std::filesystem::path filepath = entry.path();
+    std::string filename = entry.path().filename();
+    if (
+      entry.is_regular_file() &&
+      filepath.extension() == ".csv" &&
+      filename.substr(0, 13) == "measurements_" &&
+      filename != "poses.csv")
+    {
+      filename = filepath.replace_extension("").filename();
+      long timestamp = std::stol(filename.substr(13, filename.size()));
+      csv_files.insert({timestamp, entry.path()});
     }
   }
   return csv_files;
+}
+
+/** Parse the CSV file containing the robot poses and return a TODO */
+std::map<long, Eigen::Vector3d> parse_poses(
+  const std::filesystem::path & poses_file)
+{
+  std::map<long, Eigen::Vector3d> poses;
+
+  std::ifstream in_file(poses_file);
+  if (!in_file.is_open()) {
+    throw std::filesystem::filesystem_error("Could not open poses file", std::error_code());
+  }
+
+  std::string line;
+  while (std::getline(in_file, line)) {
+    std::istringstream ss(line);
+    Eigen::Vector3d p;
+    char sep; // To read and skip CSV separator
+    long timestamp;
+    ss >> timestamp >> sep >> p[0] >> sep >> p[1] >> sep >> p[2];
+    poses.insert({timestamp, p});
+  }
+
+  return poses;
+}
+
+/** Parse the CSV file containing the landmark measurements and return a <key, landmark> map */
+std::unordered_map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
+  const std::filesystem::path & measurement_file)
+{
+  std::unordered_map<int, gpe_msgs::msg::LandmarkDetection> measurements;
+
+  std::ifstream in_file(measurement_file);
+  if (!in_file.is_open()) {
+    throw std::filesystem::filesystem_error("Could not open measurements file", std::error_code());
+  }
+
+  std::string line;
+  while (std::getline(in_file, line)) {
+    std::istringstream ss(line);
+    gpe_msgs::msg::LandmarkDetection l;
+    char sep; // To read and skip CSV separator
+    ss >> l.id >> sep >> l.x >> sep >> l.y;
+    for (int i = 0; i < 4; i++) {
+      ss >> sep >> l.covariance[i];
+    }
+    measurements.insert({l.id, l});
+  }
+
+  return measurements;
 }
 
 }  // namespace gpe

@@ -12,6 +12,7 @@
   <depend>rclcpp</depend>
   <depend>rcutils</depend>
   <depend>gpe_core</depend>
+  <depend>eigen</depend>
   <depend>gpe_msgs</depend>
   <depend>gpe_landmark_server</depend>
 

@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(gpe_core REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(gpe_msgs REQUIRED)
 find_package(gpe_landmark_server REQUIRED)
 
@@ -18,6 +19,9 @@ add_library(file_io INTERFACE)
 target_include_directories(file_io INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+target_link_libraries(file_io INTERFACE
+  Eigen3::Eigen
 )
 
 add_executable(se2_offline_estimation_node src/se2_offline_estimation_node.cpp)
