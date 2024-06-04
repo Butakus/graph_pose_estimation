@@ -28,7 +28,7 @@ TEST(LandmarkIOTests, file_parse_test)
 {
   using Landmark = gpe_msgs::msg::Landmark;
   fs::path yaml_path = fs::path(TEST_DIRECTORY) / fs::path("test_landmarks.yaml");
-  std::unordered_map<int, Landmark> landmarks = load_landmarks(yaml_path);
+  std::map<int, Landmark> landmarks = load_landmarks(yaml_path);
   ASSERT_NO_THROW(landmarks = load_landmarks(yaml_path));
   ASSERT_EQ(landmarks.size(), 3);
   for (const auto &[id, l] : landmarks) {

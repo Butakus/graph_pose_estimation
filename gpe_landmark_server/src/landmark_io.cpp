@@ -88,7 +88,7 @@ bool validate_yaml_keys(const YAML::Node & node)
   return valid;
 }
 
-std::unordered_map<int, Landmark> load_landmarks(const std::string & filename)
+std::map<int, Landmark> load_landmarks(const std::string & filename)
 {
   // Check for empty strings
   if (filename.size() == 0) {
@@ -108,7 +108,7 @@ std::unordered_map<int, Landmark> load_landmarks(const std::string & filename)
   std::string frame_id = yaml_doc["frame_id"].as<std::string>();
 
   // Iterate over landmarks from YAML node and generate the map
-  std::unordered_map<int, Landmark> landmarks;
+  std::map<int, Landmark> landmarks;
   YAML::Node landmarks_doc = yaml_doc["landmarks"];
   for (const auto & l_node : landmarks_doc) {
     if (!validate_yaml_keys(l_node)) {
