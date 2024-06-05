@@ -21,28 +21,6 @@
 #include <gpe_msgs/msg/landmark_array.hpp>
 
 
-static double uniform_rand(double low, double high)
-{
-  return low + ((double) std::rand() / (RAND_MAX + 1.0)) * (high - low);
-}
-
-static double gauss_rand(double mean, double sigma)
-{
-  double x, y, r2;
-  do {
-    x = -1.0 + 2.0 * uniform_rand(0.0, 1.0);
-    y = -1.0 + 2.0 * uniform_rand(0.0, 1.0);
-    r2 = x * x + y * y;
-  } while (r2 > 1.0 || r2 == 0.0);
-
-  return mean + sigma * y * std::sqrt(-2.0 * std::log(r2) / r2);
-}
-
-double gaussian(double sigma)
-{
-  return gauss_rand(0., sigma);
-}
-
 std::vector<Eigen::Vector2d> generate_landmark_points()
 {
   std::vector<Eigen::Vector2d> poses
@@ -64,7 +42,7 @@ void compute_landmark_measurement(
   // Compute the perfect measurement
   Eigen::Vector2d true_measurement = pose.inverse() * landmark;
   // Add gaussian noise
-  measurement = true_measurement + Eigen::Vector2d{gaussian(0.1), gaussian(0.1)};
+  measurement = true_measurement + Eigen::Vector2d{gpe::gaussian(0.1), gpe::gaussian(0.1)};
   // Fill the information matrix
   inf_matrix = Eigen::Matrix2d::Identity() * 10;
 }

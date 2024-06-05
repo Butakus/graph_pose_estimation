@@ -73,6 +73,29 @@ constexpr double norm_angle(const double angle)
   return normalized_angle < 0 ? normalized_angle + deg_to_rad(360.0) : normalized_angle;
 }
 
+/* Random utils */
+static double uniform_rand(double low, double high)
+{
+  return low + ((double) std::rand() / (RAND_MAX + 1.0)) * (high - low);
+}
+
+static double gauss_rand(double mean, double sigma)
+{
+  double x, y, r2;
+  do {
+    x = -1.0 + 2.0 * uniform_rand(0.0, 1.0);
+    y = -1.0 + 2.0 * uniform_rand(0.0, 1.0);
+    r2 = x * x + y * y;
+  } while (r2 > 1.0 || r2 == 0.0);
+
+  return mean + sigma * y * std::sqrt(-2.0 * std::log(r2) / r2);
+}
+
+double gaussian(double sigma)
+{
+  return gauss_rand(0., sigma);
+}
+
 
 }  // namespace gpe
 

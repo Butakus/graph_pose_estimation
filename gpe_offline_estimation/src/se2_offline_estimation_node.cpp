@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <filesystem>
+#include <gpe_core/utils.hpp>
 #include <gpe_core/se2_pose_estimation.hpp>
 #include <gpe_msgs/msg/landmark.hpp>
 #include <gpe_msgs/msg/landmark_detection.hpp>
@@ -33,37 +34,15 @@ void print_usage()
             << std::endl;
 }
 
-static double uniform_rand(double low, double high)
-{
-  return low + ((double) std::rand() / (RAND_MAX + 1.0)) * (high - low);
-}
-
-static double gauss_rand(double mean, double sigma)
-{
-  double x, y, r2;
-  do {
-    x = -1.0 + 2.0 * uniform_rand(0.0, 1.0);
-    y = -1.0 + 2.0 * uniform_rand(0.0, 1.0);
-    r2 = x * x + y * y;
-  } while (r2 > 1.0 || r2 == 0.0);
-
-  return mean + sigma * y * std::sqrt(-2.0 * std::log(r2) / r2);
-}
-
-double gaussian(double sigma)
-{
-  return gauss_rand(0., sigma);
-}
-
 
 /** Add gaussian noise to a pose.
     TODO: Allow configuring noise std as parameters.
 */
 Eigen::Vector3d add_pose_noise(Eigen::Vector3d pose)
 {
-  pose[0] += gaussian(1.0);
-  pose[1] += gaussian(1.0);
-  pose[2] += gaussian(0.2);
+  pose[0] += gpe::gaussian(1.0);
+  pose[1] += gpe::gaussian(1.0);
+  pose[2] += gpe::gaussian(0.2);
   return pose;
 }
 

@@ -47,8 +47,6 @@ ament_target_dependencies(se2_pose_estimation PUBLIC
   rclcpp
   gpe_msgs
 )
-# TODO: Consider changing export visibility to PUBLIC if
-#       these libs are expected to be used by consuming targets
 target_link_libraries(se2_pose_estimation PUBLIC
   Eigen3::Eigen
   # g2o::core # Core is already exported by other g2o targets
@@ -63,7 +61,7 @@ install(
   DESTINATION include
 )
 install(
-  TARGETS se2_pose_estimation gpe_hungarian
+  TARGETS se2_pose_estimation gpe_hungarian gpe_utils
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
