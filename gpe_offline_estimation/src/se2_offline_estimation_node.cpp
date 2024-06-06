@@ -83,17 +83,20 @@ int main(int argc, char ** argv)
 
   // Load poses
   fs::path poses_file = measurements_path / fs::path("poses.csv");  // It should be here
-  auto poses_map = gpe::parse_poses(poses_file);
+  std::map<int64_t, Eigen::Vector3d> gt_poses_map = gpe::parse_poses(poses_file);
 
-  // Load measurements
-  using Measurements = std::unordered_map<int, gpe_msgs::msg::LandmarkDetection>;
+  // Estimated poses to be saved later
+  std::map<int64_t, Eigen::Vector3d> output_poses;
+
+  // Load and process measurements
+  using Measurements = std::map<int, gpe_msgs::msg::LandmarkDetection>;
   auto measurement_files = gpe::find_measurement_files(measurements_path);
   std::cout << "Number of measurement CSV files: " << measurement_files.size() << std::endl;
   for (const auto & [timestamp, measurement_file] : measurement_files) {
     std::cout << "##########################################" << std::endl;
     std::cout << "Processing file with timestamp: " << timestamp << std::endl;
     // First, find if there is a pose with this timestamp
-    if (poses_map.find(timestamp) == poses_map.end()) {
+    if (gt_poses_map.find(timestamp) == gt_poses_map.end()) {
       std::cerr << "WARNING: Could not find a pose for timestamp: " << timestamp
                 << ". Skipping measurements" << std::endl;
       continue;
@@ -101,7 +104,7 @@ int main(int argc, char ** argv)
     // Get measurements and their corresponding pose
     Measurements measurements = gpe::parse_measurements(measurement_file);
     std::cout << "Landmarks detected: " << measurements.size() << std::endl;
-    Eigen::Vector3d pose = poses_map[timestamp];
+    Eigen::Vector3d pose = gt_poses_map[timestamp];
     std::cout << "Ground truth pose:\n" << pose << std::endl;
 
     // Set initial estimation and measurements
@@ -124,9 +127,14 @@ int main(int argc, char ** argv)
               << robot_pose.translation().x() << ", "
               << robot_pose.translation().y() << " | "
               << robot_pose.rotation().angle() << std::endl;
-
-    // Save to output file
+    // Save pose to vector
+    output_poses.insert({timestamp, robot_pose.toVector()});
   }
+
+  // Save all estimated poses to output file
+  // TODO: Allow output file path to be set from commandline arguments
+  fs::path output_poses_file = measurements_path / fs::path("output_poses.csv");
+  gpe::write_poses(output_poses, output_poses_file);
 
   return 0;
 }

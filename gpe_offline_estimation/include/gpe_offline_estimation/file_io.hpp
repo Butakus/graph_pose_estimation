@@ -21,7 +21,6 @@
 #include <iostream>
 #include <fstream>
 #include <map>
-#include <unordered_map>
 #include <filesystem>
 #include <Eigen/Dense>
 #include <gpe_msgs/msg/landmark_detection.hpp>
@@ -32,10 +31,10 @@ namespace gpe
 /** Iterate a given directory (non-recursively) and return the path of all CSV files in it.
     Return a map where the keys are the timestamps and the values are the file paths.
 */
-std::map<long, std::filesystem::path> find_measurement_files(
+std::map<int64_t, std::filesystem::path> find_measurement_files(
   const std::filesystem::path & measurements_path)
 {
-  std::map<long, std::filesystem::path> csv_files;
+  std::map<int64_t, std::filesystem::path> csv_files;
   for (const auto & entry : std::filesystem::directory_iterator(measurements_path)) {
     std::filesystem::path filepath = entry.path();
     std::string filename = entry.path().filename();
@@ -46,18 +45,18 @@ std::map<long, std::filesystem::path> find_measurement_files(
       filename != "poses.csv")
     {
       filename = filepath.replace_extension("").filename();
-      long timestamp = std::stol(filename.substr(13, filename.size()));
+      int64_t timestamp = std::stol(filename.substr(13, filename.size()));
       csv_files.insert({timestamp, entry.path()});
     }
   }
   return csv_files;
 }
 
-/** Parse the CSV file containing the robot poses and return a TODO */
-std::map<long, Eigen::Vector3d> parse_poses(
+/** Parse the CSV file containing the robot poses and return a <timestamp, pose> map */
+std::map<int64_t, Eigen::Vector3d> parse_poses(
   const std::filesystem::path & poses_file)
 {
-  std::map<long, Eigen::Vector3d> poses;
+  std::map<int64_t, Eigen::Vector3d> poses;
 
   std::ifstream in_file(poses_file);
   if (!in_file.is_open()) {
@@ -69,7 +68,7 @@ std::map<long, Eigen::Vector3d> parse_poses(
     std::istringstream ss(line);
     Eigen::Vector3d p;
     char sep; // To read and skip CSV separator
-    long timestamp;
+    int64_t timestamp;
     ss >> timestamp >> sep >> p[0] >> sep >> p[1] >> sep >> p[2];
     poses.insert({timestamp, p});
   }
@@ -77,11 +76,11 @@ std::map<long, Eigen::Vector3d> parse_poses(
   return poses;
 }
 
-/** Parse the CSV file containing the landmark measurements and return a <key, landmark> map */
-std::unordered_map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
+/** Parse the CSV file containing the landmark measurements and return a <ID, landmark> map */
+std::map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
   const std::filesystem::path & measurement_file)
 {
-  std::unordered_map<int, gpe_msgs::msg::LandmarkDetection> measurements;
+  std::map<int, gpe_msgs::msg::LandmarkDetection> measurements;
 
   std::ifstream in_file(measurement_file);
   if (!in_file.is_open()) {
@@ -101,6 +100,25 @@ std::unordered_map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
   }
 
   return measurements;
+}
+
+/** Write the estimated poses to a CSV file. Output is sorted by timestamp (map keys) */
+void write_poses(
+  const std::map<int64_t, Eigen::Vector3d> & output_poses,
+  const std::filesystem::path & output_poses_file)
+{
+  std::ofstream out_file(output_poses_file);
+  if (!out_file.is_open()) {
+    throw std::filesystem::filesystem_error("Could not open output poses file", std::error_code());
+  }
+
+  // TODO: Maybe consider limiting number of decimals?
+  for (const auto & [timestamp, pose] : output_poses) {
+    out_file << timestamp << ';'
+             << pose[0] << ';'
+             << pose[1] << ';'
+             << pose[2] << std::endl;
+  }
 }
 
 }  // namespace gpe

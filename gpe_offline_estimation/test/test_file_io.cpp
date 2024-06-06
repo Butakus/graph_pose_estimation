@@ -117,6 +117,7 @@ TEST(FileParsingTests, parse_poses)
   EXPECT_NEAR(poses_map[1717000003][2], 0.7, 1e-4);
 }
 
+// TODO: Add tests for write_poses() function.
 
 }  // namespace gpe
 
