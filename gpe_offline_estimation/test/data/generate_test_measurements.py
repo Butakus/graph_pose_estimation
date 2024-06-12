@@ -11,14 +11,16 @@ The measurements will be generated based on a maximum detection distance
 and a normal distribution for the detection error. Those parameters can be modified
 """
 
-import yaml
 import csv
-import numpy as np
 import os
 
-LANDMARKS_FILE = "test_landmarks.yaml"
-MEASUREMENTS_DIR = "measurements"
-POSES_FILE = "measurements/poses.csv"
+import numpy as np
+import yaml
+
+
+LANDMARKS_FILE = 'test_landmarks.yaml'
+MEASUREMENTS_DIR = 'measurements'
+POSES_FILE = 'measurements/poses.csv'
 MAX_RANGE = 20.0
 ERROR_STD = 0.1
 
@@ -31,9 +33,9 @@ def load_landmarks():
         landmarks_doc = yaml.safe_load(landmarks_file)
     landmarks = []
     ids = []
-    for l_doc in landmarks_doc["landmarks"]:
-        ids.append(l_doc["id"])
-        landmarks.append(l_doc["coords"])
+    for l_doc in landmarks_doc['landmarks']:
+        ids.append(l_doc['id'])
+        landmarks.append(l_doc['coords'])
     return np.array(landmarks), np.array(ids)
 
 
@@ -77,14 +79,14 @@ def detect_landmarks(landmarks, ids, pose):
 
 
 def save_measurements(timestamp, measurements, ids):
-    filename = F"measurements_{timestamp}.csv"
+    filename = F'measurements_{timestamp}.csv'
     measurement_file = os.path.join(MEASUREMENTS_DIR, filename)
     covariance = [ERROR_STD**2, 0.0, 0.0, ERROR_STD**2]
     data_lines = []
     # Iterate to apply custom float formatting
     for i, m in zip(ids, measurements):
-        line = [i, F"{m[0]:.4f}", F"{m[1]:.4f}"]
-        line += [F"{x:.4f}" for x in covariance]
+        line = [i, F'{m[0]:.4f}', F'{m[1]:.4f}']
+        line += [F'{x:.4f}' for x in covariance]
         data_lines.append(line)
     with open(measurement_file, 'w') as out_csv:
         m_writer = csv.writer(out_csv, delimiter=';')
@@ -93,11 +95,11 @@ def save_measurements(timestamp, measurements, ids):
 
 def main():
     landmarks, ids = load_landmarks()
-    print(F"Landmarks:\n{landmarks}")
-    print(F"Landmark IDs:\n{ids}")
+    print(F'Landmarks:\n{landmarks}')
+    print(F'Landmark IDs:\n{ids}')
     timestamps, poses = load_poses()
-    print(F"Timestamps:\n{timestamps}")
-    print(F"Poses:\n{poses}")
+    print(F'Timestamps:\n{timestamps}')
+    print(F'Poses:\n{poses}')
     # To test detection function
     # detect_landmarks(
     #     np.array([[5.0, 5.0], [2.0, 4.0]]),
@@ -105,12 +107,12 @@ def main():
     #     np.array([0.0, 0.0, np.pi/2])
     # )
     for t, p in zip(timestamps, poses):
-        print("-----------------------------")
-        print(F"Pose: {t} -> {p}")
+        print('-----------------------------')
+        print(F'Pose: {t} -> {p}')
         measurements, detected_ids = detect_landmarks(landmarks, ids, p)
-        print("Measurements [ID -> Detection]:")
+        print('Measurements [ID -> Detection]:')
         for m, i in zip(measurements, detected_ids):
-            print(F"{i:2d} -> {m}")
+            print(F'{i:2d} -> {m}')
         save_measurements(t, measurements, detected_ids)
 
 
