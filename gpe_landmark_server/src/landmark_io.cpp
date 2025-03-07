@@ -19,7 +19,7 @@
 #include <filesystem>
 
 #include <gpe_landmark_server/landmark_io.hpp>
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 
 namespace fs = std::filesystem;
 using Landmark = gpe_msgs::msg::Landmark;

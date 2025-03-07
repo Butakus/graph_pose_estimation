@@ -22,6 +22,7 @@
 //   http://www.mathworks.com/matlabcentral/fileexchange/6543-functions-for-the-rectangular-assignment-problem
 
 #include <gpe_core/hungarian.hpp>
+#include <algorithm>
 
 namespace gpe
 {

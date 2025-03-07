@@ -18,12 +18,8 @@
 #ifndef GPE_CORE__UTILS_HPP_
 #define GPE_CORE__UTILS_HPP_
 
-#include <tf2/LinearMath/Quaternion.h>
-// Remove "-Wpedantic with tf2/utils.h to avoid warnings about extra ';'"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
+#include <tf2/LinearMath/Quaternion.hpp>
 #include <tf2/utils.h>
-#pragma GCC diagnostic pop
 
 #include <cmath>
 #include <geometry_msgs/msg/quaternion.hpp>
@@ -32,7 +28,7 @@ namespace gpe
 {
 
 /** Creates and returns a quaternion msg from a given yaw angle */
-geometry_msgs::msg::Quaternion quaternion_msg_from_yaw(double yaw)
+inline geometry_msgs::msg::Quaternion quaternion_msg_from_yaw(double yaw)
 {
   geometry_msgs::msg::Quaternion q;
   tf2::Quaternion tf_q;
@@ -48,7 +44,7 @@ geometry_msgs::msg::Quaternion quaternion_msg_from_yaw(double yaw)
 }
 
 /** Extracts yaw angle from quaternion msg */
-double yaw_from_quaternion(const geometry_msgs::msg::Quaternion & q)
+inline double yaw_from_quaternion(const geometry_msgs::msg::Quaternion & q)
 {
   tf2::Quaternion tf_q(q.x, q.y, q.z, q.w);
   return tf2::getYaw(tf_q);
@@ -91,7 +87,7 @@ static double gauss_rand(double mean, double sigma)
   return mean + sigma * y * std::sqrt(-2.0 * std::log(r2) / r2);
 }
 
-double gaussian(double sigma)
+inline double gaussian(double sigma)
 {
   return gauss_rand(0., sigma);
 }

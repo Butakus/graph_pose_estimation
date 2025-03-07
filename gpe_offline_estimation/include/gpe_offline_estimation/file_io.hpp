@@ -31,7 +31,7 @@ namespace gpe
 /** Iterate a given directory (non-recursively) and return the path of all CSV files in it.
     Return a map where the keys are the timestamps and the values are the file paths.
 */
-std::map<int64_t, std::filesystem::path> find_measurement_files(
+inline std::map<int64_t, std::filesystem::path> find_measurement_files(
   const std::filesystem::path & measurements_path)
 {
   std::map<int64_t, std::filesystem::path> csv_files;
@@ -53,7 +53,7 @@ std::map<int64_t, std::filesystem::path> find_measurement_files(
 }
 
 /** Parse the CSV file containing the robot poses and return a <timestamp, pose> map */
-std::map<int64_t, Eigen::Vector3d> parse_poses(
+inline std::map<int64_t, Eigen::Vector3d> parse_poses(
   const std::filesystem::path & poses_file)
 {
   std::map<int64_t, Eigen::Vector3d> poses;
@@ -77,7 +77,7 @@ std::map<int64_t, Eigen::Vector3d> parse_poses(
 }
 
 /** Parse the CSV file containing the landmark measurements and return a <ID, landmark> map */
-std::map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
+inline std::map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
   const std::filesystem::path & measurement_file)
 {
   std::map<int, gpe_msgs::msg::LandmarkDetection> measurements;
@@ -103,7 +103,7 @@ std::map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
 }
 
 /** Write the estimated poses to a CSV file. Output is sorted by timestamp (map keys) */
-void write_poses(
+inline void write_poses(
   const std::map<int64_t, Eigen::Vector3d> & output_poses,
   const std::filesystem::path & output_poses_file)
 {

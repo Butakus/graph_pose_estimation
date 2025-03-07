@@ -25,12 +25,9 @@
 #ifndef GPE_CORE__HUNGARIAN_ASSIGNMENT_HPP_
 #define GPE_CORE__HUNGARIAN_ASSIGNMENT_HPP_
 
-#include <iostream>
 #include <vector>
 #include <cassert>
-#include <limits>
 #include <cmath>
-#include <algorithm>
 
 namespace gpe
 {

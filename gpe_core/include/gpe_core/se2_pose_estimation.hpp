@@ -32,7 +32,6 @@
 
 #include <gpe_msgs/msg/landmark_array.hpp>
 
-#include <iostream>
 #include <vector>
 #include <cmath>
 
