@@ -7,7 +7,6 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(gpe_core REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -32,12 +31,12 @@ target_compile_features(se2_offline_estimation_node PUBLIC c_std_99 cxx_std_17) 
 ament_target_dependencies(se2_offline_estimation_node PUBLIC
   gpe_core
   gpe_msgs
-  rclcpp
   rcutils
   gpe_landmark_server
 )
 target_link_libraries(se2_offline_estimation_node PRIVATE
   file_io
+  Eigen3::Eigen
 )
 
 install(TARGETS se2_offline_estimation_node
