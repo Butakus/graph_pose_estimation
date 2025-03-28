@@ -15,7 +15,7 @@ find_package(gpe_msgs REQUIRED)
 add_library(gpe_landmark_io SHARED
   src/landmark_io.cpp
 )
-target_compile_features(gpe_landmark_io PUBLIC cxx_std_17)
+target_compile_features(gpe_landmark_io PUBLIC cxx_std_20)
 target_include_directories(gpe_landmark_io PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>

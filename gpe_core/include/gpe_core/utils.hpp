@@ -18,14 +18,21 @@
 #ifndef GPE_CORE__UTILS_HPP_
 #define GPE_CORE__UTILS_HPP_
 
+#include <random>
+
 #include <tf2/LinearMath/Quaternion.hpp>
 #include <tf2/utils.h>
 
-#include <cmath>
 #include <geometry_msgs/msg/quaternion.hpp>
 
 namespace gpe
 {
+
+namespace
+{
+// Anonymous namespace to avoid exporting this
+using std::numbers::pi;
+}
 
 /** Creates and returns a quaternion msg from a given yaw angle */
 inline geometry_msgs::msg::Quaternion quaternion_msg_from_yaw(double yaw)
@@ -53,43 +60,49 @@ inline double yaw_from_quaternion(const geometry_msgs::msg::Quaternion & q)
 /** Converts degrees to radians in compile time */
 constexpr double deg_to_rad(const double deg)
 {
-  return M_PI * deg / 180.0;
+  return std::numbers::pi * deg / 180.0;
 }
 
 /** Converts radians to degrees in compile time */
 constexpr double rad_to_deg(const double rad)
 {
-  return 180.0 * rad / M_PI;
+  return 180.0 * rad / pi;
 }
 
-/** Angle normalization to [0-2PI] range (in radians) */
+/** Angle normalization to [0, 2*pi) range (in radians) */
+constexpr double norm_angle_2pi(const double angle)
+{
+  double norm_angle = std::fmod(angle, 2 * pi);
+  return norm_angle < 0 ? norm_angle + deg_to_rad(360.0) : norm_angle;
+}
+
+/** Angle normalization to [-pi, pi) range (in radians) */
 constexpr double norm_angle(const double angle)
 {
-  double normalized_angle = std::fmod(angle, 2 * M_PI);
-  return normalized_angle < 0 ? normalized_angle + deg_to_rad(360.0) : normalized_angle;
+  double norm_angle = std::fmod(angle + pi, 2 * pi);
+  return norm_angle < 0 ? norm_angle + pi : norm_angle - pi;
 }
 
 /* Random utils */
-static double uniform_rand(double low, double high)
+static std::mt19937 get_random_generator()
 {
-  return low + ((double) std::rand() / (RAND_MAX + 1.0)) * (high - low);
+  static std::random_device rd;
+  static std::mt19937 gen(rd());
+  return gen;
 }
 
-static double gauss_rand(double mean, double sigma)
+inline double uniform_rand(double low, double high)
 {
-  double x, y, r2;
-  do {
-    x = -1.0 + 2.0 * uniform_rand(0.0, 1.0);
-    y = -1.0 + 2.0 * uniform_rand(0.0, 1.0);
-    r2 = x * x + y * y;
-  } while (r2 > 1.0 || r2 == 0.0);
-
-  return mean + sigma * y * std::sqrt(-2.0 * std::log(r2) / r2);
+  static std::mt19937 gen = get_random_generator();
+  std::uniform_real_distribution<> dis(low, high);
+  return dis(gen);
 }
 
 inline double gaussian(double sigma)
 {
-  return gauss_rand(0., sigma);
+  static std::mt19937 gen = get_random_generator();
+  std::normal_distribution<> dis(0.0, sigma);
+  return dis(gen);
 }
 
 

@@ -27,7 +27,7 @@ add_executable(se2_offline_estimation_node src/se2_offline_estimation_node.cpp)
 target_include_directories(se2_offline_estimation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
-target_compile_features(se2_offline_estimation_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(se2_offline_estimation_node PUBLIC c_std_99 cxx_std_20)
 ament_target_dependencies(se2_offline_estimation_node PUBLIC
   gpe_core
   gpe_msgs

@@ -16,7 +16,7 @@ find_package(g2o REQUIRED)
 
 
 add_library(gpe_utils INTERFACE)
-target_compile_features(gpe_utils INTERFACE cxx_std_17)
+target_compile_features(gpe_utils INTERFACE cxx_std_20)
 target_include_directories(gpe_utils INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -29,7 +29,7 @@ ament_target_dependencies(gpe_utils INTERFACE
 add_library(gpe_hungarian SHARED
   src/hungarian.cpp
 )
-target_compile_features(gpe_hungarian PUBLIC cxx_std_17)
+target_compile_features(gpe_hungarian PUBLIC cxx_std_20)
 target_include_directories(gpe_hungarian PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -38,7 +38,7 @@ target_include_directories(gpe_hungarian PUBLIC
 add_library(se2_pose_estimation SHARED
   src/se2_pose_estimation.cpp
 )
-target_compile_features(se2_pose_estimation PUBLIC cxx_std_17)
+target_compile_features(se2_pose_estimation PUBLIC cxx_std_20)
 target_include_directories(se2_pose_estimation PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
