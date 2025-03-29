@@ -25,6 +25,9 @@ ament_target_dependencies(gpe_utils INTERFACE
   tf2
   geometry_msgs
 )
+target_link_libraries(gpe_utils INTERFACE
+  Eigen3::Eigen
+)
 
 add_library(gpe_hungarian SHARED
   src/hungarian.cpp

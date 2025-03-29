@@ -20,6 +20,7 @@
 
 #include <random>
 
+#include <Eigen/Dense>
 #include <tf2/LinearMath/Quaternion.hpp>
 #include <tf2/utils.h>
 
@@ -98,11 +99,34 @@ inline double uniform_rand(double low, double high)
   return dis(gen);
 }
 
+/** Returns a sample from a normal distribution with zero mean and the given stddev */
 inline double gaussian(double sigma)
 {
   static std::mt19937 gen = get_random_generator();
   std::normal_distribution<> dis(0.0, sigma);
   return dis(gen);
+}
+
+/**
+ * Returns a sample from a multivariate normal distribution
+ * with zero mean and the given covariance.
+ */
+inline Eigen::VectorXd gaussian(const Eigen::MatrixXd & covariance)
+{
+  // Get the transform from the covariance matrix
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(covariance);
+  auto transform =
+    eigenSolver.eigenvectors() * eigenSolver.eigenvalues().cwiseSqrt().asDiagonal();
+
+  static std::mt19937 gen = get_random_generator();
+  std::normal_distribution<> dis(0.0, 1.0);
+
+  // A lambda function to fill the base random variables in the output vector
+  const auto random_func =
+    [&]([[maybe_unused]] double x) {
+      return dis(gen);
+    };
+  return transform * Eigen::VectorXd {covariance.rows()}.unaryExpr(random_func);
 }
 
 
