@@ -5,12 +5,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+# Find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(gpe_msgs REQUIRED)
-
 
 add_library(gpe_landmark_io SHARED
   src/landmark_io.cpp
@@ -20,14 +18,9 @@ target_include_directories(gpe_landmark_io PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(gpe_landmark_io PUBLIC
-  yaml_cpp_vendor
-  gpe_msgs
-)
 target_link_libraries(gpe_landmark_io PUBLIC
-  # This should not be necessary because we have yaml_cpp_vendor,
-  # but it must be linked manually linked in Ubuntu 24.04 to avoid linker errors...
   yaml-cpp
+  ${gpe_msgs_TARGETS}
 )
 
 
@@ -58,19 +51,11 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  gpe_landmark_io
-)
 ament_export_targets(
   export_${PROJECT_NAME}
 )
 
 ament_export_dependencies(
-  rosidl_default_runtime
-  rclcpp
   yaml_cpp_vendor
   gpe_msgs
 )

@@ -7,26 +7,25 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
 find_package(gpe_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(g2o REQUIRED)
 
-
 add_library(gpe_utils INTERFACE)
 target_compile_features(gpe_utils INTERFACE cxx_std_20)
-target_include_directories(gpe_utils INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-ament_target_dependencies(gpe_utils INTERFACE
-  tf2
-  geometry_msgs
+target_sources(gpe_utils PUBLIC
+  FILE_SET HEADERS
+  BASE_DIRS
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  FILES
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/utils.hpp>
 )
 target_link_libraries(gpe_utils INTERFACE
   Eigen3::Eigen
+  tf2::tf2
+  ${geometry_msgs_TARGETS}
 )
 
 add_library(gpe_hungarian SHARED
@@ -38,25 +37,22 @@ target_include_directories(gpe_hungarian PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-add_library(se2_pose_estimation SHARED
+add_library(gpe_se2_pose_estimation SHARED
   src/se2_pose_estimation.cpp
 )
-target_compile_features(se2_pose_estimation PUBLIC cxx_std_20)
-target_include_directories(se2_pose_estimation PUBLIC
+target_compile_features(gpe_se2_pose_estimation PUBLIC cxx_std_20)
+target_include_directories(gpe_se2_pose_estimation PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(se2_pose_estimation PUBLIC
-  rclcpp
-  gpe_msgs
-)
-target_link_libraries(se2_pose_estimation PUBLIC
-  Eigen3::Eigen
-  # g2o::core # Core is already exported by other g2o targets
-  g2o::types_slam2d
-  g2o::solver_cholmod
+target_link_libraries(gpe_se2_pose_estimation
+  PUBLIC
+    Eigen3::Eigen
+    ${gpe_msgs_TARGETS}
+    g2o::types_slam2d
   PRIVATE
-  gpe_hungarian
+    g2o::solver_cholmod
+    gpe_hungarian
 )
 
 install(
@@ -64,8 +60,9 @@ install(
   DESTINATION include
 )
 install(
-  TARGETS se2_pose_estimation gpe_hungarian gpe_utils
+  TARGETS gpe_se2_pose_estimation gpe_hungarian gpe_utils
   EXPORT export_${PROJECT_NAME}
+  FILE_SET HEADERS
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -86,19 +83,13 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  se2_pose_estimation
-)
 ament_export_targets(
   export_${PROJECT_NAME}
+  HAS_LIBRARY_TARGET
 )
 
 ament_export_dependencies(
   rosidl_default_runtime
-  rclcpp
   tf2
   geometry_msgs
   gpe_msgs

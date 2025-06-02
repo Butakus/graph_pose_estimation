@@ -4,7 +4,7 @@ target_include_directories(test_utils PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(test_utils
-    gpe_utils
+  gpe_utils
 )
 
 ament_add_gtest(test_hungarian test_hungarian.cpp)
@@ -13,7 +13,7 @@ target_include_directories(test_hungarian PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(test_hungarian
-    gpe_hungarian
+  gpe_hungarian
 )
 
 ament_add_gtest(test_se2_pose_estimation test_se2_pose_estimation.cpp)
@@ -22,6 +22,6 @@ target_include_directories(test_se2_pose_estimation PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(test_se2_pose_estimation
-    se2_pose_estimation
-    gpe_utils
+  gpe_se2_pose_estimation
+  gpe_utils
 )

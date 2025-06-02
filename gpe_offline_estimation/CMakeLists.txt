@@ -15,28 +15,33 @@ find_package(gpe_landmark_server REQUIRED)
 
 
 add_library(file_io INTERFACE)
-target_include_directories(file_io INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+target_compile_features(file_io INTERFACE cxx_std_20)
+target_sources(file_io PUBLIC
+  FILE_SET HEADERS
+  BASE_DIRS
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  FILES
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/file_io.hpp>
 )
 target_link_libraries(file_io INTERFACE
   Eigen3::Eigen
+  ${gpe_msgs_TARGETS}
 )
 
 add_executable(se2_offline_estimation_node src/se2_offline_estimation_node.cpp)
 target_include_directories(se2_offline_estimation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
-target_compile_features(se2_offline_estimation_node PUBLIC c_std_99 cxx_std_20)
-ament_target_dependencies(se2_offline_estimation_node PUBLIC
-  gpe_core
-  gpe_msgs
-  rcutils
-  gpe_landmark_server
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
+target_compile_features(se2_offline_estimation_node PUBLIC c_std_99 cxx_std_20)
 target_link_libraries(se2_offline_estimation_node PRIVATE
   file_io
   Eigen3::Eigen
+  rcutils::rcutils
+  gpe_core::gpe_utils
+  gpe_core::gpe_se2_pose_estimation
+  gpe_landmark_server::gpe_landmark_io
+  ${gpe_msgs_TARGETS}
 )
 
 install(TARGETS se2_offline_estimation_node
