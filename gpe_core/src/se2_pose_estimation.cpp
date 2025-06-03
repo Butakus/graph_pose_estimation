@@ -79,7 +79,7 @@ bool SE2PoseEstimation::add_landmark(
 
   landmarks_.push_back(landmark);
   // Add landmark vertex to optimizer
-  g2o::VertexPointXY * landmark_vertex = new g2o::VertexPointXY;
+  g2o::VertexPointXY * landmark_vertex = new g2o::VertexPointXY();
   landmark_vertex->setId(id);
   landmark_ids_.push_back(id);
   landmark_vertex->setFixed(true);
@@ -164,10 +164,17 @@ void SE2PoseEstimation::increase_node_id()
 
 void SE2PoseEstimation::update_pose_id()
 {
+  // Get the graph vertex with the old ID
+  auto robot_pose_vertex = dynamic_cast<g2o::VertexSE2 *>(optimizer_.vertex(pose_id_));
+  // Update the current ID, incrementing until a free one is found
   pose_id_++;
   // If next ID is taken, keep incrementing until we find a free one
   while (is_landmark_id(pose_id_)) {
     pose_id_++;
+  }
+  // Update the ID for the robot pose Vertex inside the graph
+  if (robot_pose_vertex != nullptr) {
+    robot_pose_vertex->setId(pose_id_);
   }
 }
 
@@ -178,14 +185,15 @@ void SE2PoseEstimation::set_initial_pose(const g2o::SE2 & initial_pose)
   // Setting the initial pose removes all previous measurements
   reset_measurements();
 
-  // Set vertex from robot pose (initial guess)
-  if (auto v = optimizer_.vertex(pose_id_)) {
-    optimizer_.removeVertex(v);
+  // Update vertex estimate from robot pose (initial guess)
+  auto robot_pose_vertex = dynamic_cast<g2o::VertexSE2 *>(optimizer_.vertex(pose_id_));
+  if (robot_pose_vertex == nullptr) {
+    // If vertex was not created yet, create a new one
+    robot_pose_vertex = new g2o::VertexSE2();
+    robot_pose_vertex->setId(pose_id_);
+    optimizer_.addVertex(robot_pose_vertex);
   }
-  g2o::VertexSE2 * robot_pose_vertex = new g2o::VertexSE2;
-  robot_pose_vertex->setId(pose_id_);
   robot_pose_vertex->setEstimate(initial_pose);
-  optimizer_.addVertex(robot_pose_vertex);
 }
 
 
@@ -193,7 +201,7 @@ void SE2PoseEstimation::add_measurement(
   const Eigen::Vector2d & measurement,
   const Eigen::Matrix2d & inf_matrix)
 {
-  g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY;
+  g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY();
 
   // The second vertex (landmark ID) will be set in the association step.
   landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
@@ -208,7 +216,7 @@ void SE2PoseEstimation::add_measurement(
   const Eigen::Matrix2d & inf_matrix,
   const unsigned long landmark_id)
 {
-  g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY;
+  g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY();
   landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
   landmark_observation->vertices()[1] = optimizer_.vertex(landmark_id);
 

@@ -118,6 +118,7 @@ int main(int argc, char ** argv)
       for (size_t i = 0; i < m.covariance.size(); i++) {
         inf_matrix(i) = m.covariance[i];
       }
+      inf_matrix = inf_matrix.inverse();
       estimator.add_measurement(measurement, inf_matrix, idx);
     }
 

@@ -194,7 +194,7 @@ TEST(SE2PoseEstimationTests, add_landmark_list_test)
   // Now add IDs where the pose_id_ should be (it should be ok)
   ids.clear();
   for (size_t i = 0; i < landmark_points.size(); i++) {
-    ids.push_back(1000 + i);
+    ids.push_back(1000000 + i);
   }
   estimator.add_landmarks(landmark_points, ids);
   ASSERT_EQ(estimator.get_landmarks().size(), 2 * ids.size());

@@ -138,8 +138,9 @@ private:
   // ID counter used for landmarks. Starts at zero.
   unsigned long node_id_ = 0;
   std::vector<unsigned long> landmark_ids_;
-  // ID used for the pose. Defaults to 1000 but can change if a landmark uses that number.
-  unsigned long pose_id_ = 1000;
+  // ID used for the pose. Defaults to 1000000 but can automatically change
+  // if a landmark uses that number.
+  unsigned long pose_id_ = 1000000;
   // Optimization objects
   g2o::SparseOptimizer optimizer_;
 };
