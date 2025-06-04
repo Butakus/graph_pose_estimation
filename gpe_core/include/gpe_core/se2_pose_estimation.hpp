@@ -33,6 +33,7 @@
 #include <gpe_msgs/msg/landmark_array.hpp>
 
 #include <vector>
+#include <set>
 #include <cmath>
 
 namespace gpe
@@ -73,7 +74,7 @@ public:
   bool add_landmarks(const gpe_msgs::msg::LandmarkArray & landmarks_msg);
 
   /** Get the current list of landmarks */
-  inline std::vector<Eigen::Vector2d> get_landmarks() const {return landmarks_;}
+  std::vector<Eigen::Vector2d> get_landmarks() const;
 
   /** Set the initial pose estimation.
       Calling this function will remove all measurements.
@@ -86,8 +87,11 @@ public:
     const Eigen::Matrix2d & inf_matrix
   );
 
-  /** Add a new measurement with its information matrix and the ID of the landmark */
-  void add_measurement(
+  /** Add a new measurement with its information matrix and the ID of the landmark
+      Returns false if the landmark_id does not exist in the graph
+      Returns false if the measurement's edge already exists
+  */
+  bool add_measurement(
     const Eigen::Vector2d & measurement,
     const Eigen::Matrix2d & inf_matrix,
     const unsigned long landmark_id
@@ -130,14 +134,14 @@ private:
 
   // State (map and poses)
   g2o::SE2 pose_;
-  std::vector<Eigen::Vector2d> landmarks_;  // TODO: Probably not needed?
+
   // List of measurements that are not associated yet to any landmark
   std::vector<g2o::EdgeSE2PointXY *> detached_measurements_;
 
   // G2O graph IDs and lookup tables
   // ID counter used for landmarks. Starts at zero.
   unsigned long node_id_ = 0;
-  std::vector<unsigned long> landmark_ids_;
+  std::set<unsigned long> landmark_ids_;
   // ID used for the pose. Defaults to 1000000 but can automatically change
   // if a landmark uses that number.
   unsigned long pose_id_ = 1000000;

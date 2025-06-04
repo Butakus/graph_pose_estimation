@@ -18,7 +18,6 @@
 #include <gpe_core/se2_pose_estimation.hpp>
 #include <gpe_core/hungarian.hpp>
 
-#include <unordered_set>
 
 namespace gpe
 {
@@ -56,12 +55,14 @@ void SE2PoseEstimation::initialize_optimizer()
   auto solver = std::make_unique<g2o::OptimizationAlgorithmLevenberg>(
     std::make_unique<SlamBlockSolver>(std::move(linearSolver)));
   optimizer_.setAlgorithm(solver.release());
+
+  // Create a vertex in the graph for the robot pose (with a zero/unknown estimate)
+  set_initial_pose(g2o::SE2());
 }
 
 void SE2PoseEstimation::add_landmark(const Eigen::Vector2d & landmark)
 {
   increase_node_id();
-  landmarks_.push_back(landmark);
   add_landmark(landmark, node_id_);
 }
 
@@ -69,23 +70,24 @@ bool SE2PoseEstimation::add_landmark(
   const Eigen::Vector2d & landmark,
   const unsigned long id)
 {
-  // Check if ID exists. Change pose_id_ if there is conflict.
-  if (is_landmark_id(id)) {
-    return false;
-  }
+  // Change pose_id_ if there is conflict.
   if (id == pose_id_) {
     update_pose_id();
   }
 
-  landmarks_.push_back(landmark);
   // Add landmark vertex to optimizer
   g2o::VertexPointXY * landmark_vertex = new g2o::VertexPointXY();
   landmark_vertex->setId(id);
-  landmark_ids_.push_back(id);
   landmark_vertex->setFixed(true);
   landmark_vertex->setEstimate(landmark);
-  optimizer_.addVertex(landmark_vertex);
-  return true;
+  bool result_ok = optimizer_.addVertex(landmark_vertex);
+  if (result_ok) {
+    // If the vertex was successfully added, save the ID
+    landmark_ids_.insert(id);
+  } else {
+    delete landmark_vertex;
+  }
+  return result_ok;
 }
 
 bool SE2PoseEstimation::add_landmark(const gpe_msgs::msg::Landmark & landmark_msg)
@@ -96,9 +98,6 @@ bool SE2PoseEstimation::add_landmark(const gpe_msgs::msg::Landmark & landmark_ms
 
 void SE2PoseEstimation::add_landmarks(const std::vector<Eigen::Vector2d> & landmarks)
 {
-  // Reserve space in vector of landmarks and IDs
-  landmarks_.reserve(landmarks_.size() + landmarks.size());
-  landmark_ids_.reserve(landmark_ids_.size() + landmarks.size());
   for (const auto & l : landmarks) {
     add_landmark(l);
   }
@@ -115,20 +114,20 @@ bool SE2PoseEstimation::add_landmarks(
   );
 
   // Check all IDs before adding any landmark to the graph
-  // Initialize a set with the used landmarks
-  std::unordered_set<unsigned long> unique_ids{landmark_ids_.begin(), landmark_ids_.end()};
   for (const auto & id : ids) {
-    // Try to insert the new ID in the set, and return false if ID exists
-    if (!unique_ids.insert(id).second) {
+    // Check if the new ID is already in the set, and return false if ID exists
+    if (landmark_ids_.contains(id)) {
       return false;
     }
   }
+  // Then, check if the list of IDs has duplicates
+  std::set<unsigned long> unique_ids{ids.begin(), ids.end()};
+  if (unique_ids.size() != ids.size()) {
+    return false;
+  }
 
-  // At this point, all IDs are valid
-  // Reserve space in vector of landmarks and IDs
-  landmarks_.reserve(landmarks_.size() + landmarks.size());
-  landmark_ids_.reserve(landmark_ids_.size() + landmarks.size());
-  // Add landmarks with the specified IDs
+
+  // At this point, all IDs are valid. Add landmarks with the specified IDs
   for (size_t i = 0; i < landmarks.size(); i++) {
     add_landmark(landmarks[i], ids[i]);
   }
@@ -147,17 +146,25 @@ bool SE2PoseEstimation::add_landmarks(const gpe_msgs::msg::LandmarkArray & landm
   return add_landmarks(landmarks, ids);
 }
 
-
-bool SE2PoseEstimation::is_landmark_id(const unsigned long id)
+std::vector<Eigen::Vector2d> SE2PoseEstimation::get_landmarks() const
 {
-  return std::find(landmark_ids_.cbegin(), landmark_ids_.cend(), id) != landmark_ids_.cend();
+  std::vector<Eigen::Vector2d> landmarks;
+  landmarks.reserve(optimizer_.vertices().size());
+  for (const auto & [id, vertex] : optimizer_.vertices()) {
+    auto vertex_xy = dynamic_cast<g2o::VertexPointXY *>(vertex);
+    // Only extract fixed vertices that have an ID different from the robot pose
+    if (id != static_cast<int>(pose_id_) && vertex_xy != nullptr && vertex_xy->fixed()) {
+      landmarks.push_back(vertex_xy->estimate());
+    }
+  }
+  return landmarks;
 }
 
 void SE2PoseEstimation::increase_node_id()
 {
   node_id_++;
   // If next ID is taken, keep incrementing until we find a free one
-  while (node_id_ == pose_id_ || is_landmark_id(node_id_)) {
+  while (node_id_ == pose_id_ || landmark_ids_.contains(node_id_)) {
     node_id_++;
   }
 }
@@ -169,12 +176,12 @@ void SE2PoseEstimation::update_pose_id()
   // Update the current ID, incrementing until a free one is found
   pose_id_++;
   // If next ID is taken, keep incrementing until we find a free one
-  while (is_landmark_id(pose_id_)) {
+  while (landmark_ids_.contains(pose_id_)) {
     pose_id_++;
   }
   // Update the ID for the robot pose Vertex inside the graph
   if (robot_pose_vertex != nullptr) {
-    robot_pose_vertex->setId(pose_id_);
+    optimizer_.changeId(robot_pose_vertex, pose_id_);
   }
 }
 
@@ -211,18 +218,22 @@ void SE2PoseEstimation::add_measurement(
   detached_measurements_.push_back(landmark_observation);
 }
 
-void SE2PoseEstimation::add_measurement(
+bool SE2PoseEstimation::add_measurement(
   const Eigen::Vector2d & measurement,
   const Eigen::Matrix2d & inf_matrix,
   const unsigned long landmark_id)
 {
+  auto landmark_vertex = optimizer_.vertex(landmark_id);
+  if (landmark_vertex == nullptr) {
+    return false;
+  }
   g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY();
   landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
-  landmark_observation->vertices()[1] = optimizer_.vertex(landmark_id);
+  landmark_observation->vertices()[1] = landmark_vertex;
 
   landmark_observation->setMeasurement(measurement);
   landmark_observation->setInformation(inf_matrix);
-  optimizer_.addEdge(landmark_observation);
+  return optimizer_.addEdge(landmark_observation);
 }
 
 void SE2PoseEstimation::reset_measurements()
