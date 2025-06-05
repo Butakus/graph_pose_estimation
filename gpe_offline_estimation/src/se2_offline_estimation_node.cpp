@@ -15,6 +15,7 @@
 //
 //  Author: Francisco Miguel Moreno
 
+#include <gpe_core/types.hpp>
 #include <iostream>
 #include <filesystem>
 #include <gpe_core/utils.hpp>
@@ -76,8 +77,8 @@ int main(int argc, char ** argv)
   // Setup pose estimator
   gpe::SE2PoseEstimation estimator;
   // Add landmarks to the graph
-  for (const auto & [idx, l] : landmarks_map) {
-    estimator.add_landmark(Eigen::Vector2d{l.x, l.y}, idx);
+  for (const auto & [_, l] : landmarks_map) {
+    estimator.add_landmark(l);
   }
 
   // Load poses
@@ -112,13 +113,13 @@ int main(int argc, char ** argv)
     estimator.set_initial_pose(noisy_pose);
 
     for (const auto & [idx, m] : measurements) {
-      Eigen::Vector2d measurement {m.x, m.y};
       Eigen::Matrix2d inf_matrix;
       for (size_t i = 0; i < m.covariance.size(); i++) {
         inf_matrix(i) = m.covariance[i];
       }
       inf_matrix = inf_matrix.inverse();
-      estimator.add_measurement(measurement, inf_matrix, idx);
+      gpe::MeasurementXY measurement({m.x, m.y}, inf_matrix);
+      estimator.add_measurement(measurement, idx);
     }
 
     // Estimate pose

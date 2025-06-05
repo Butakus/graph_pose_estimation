@@ -18,6 +18,11 @@
 #ifndef GPE_CORE__SE2_POSE_ESTIMATION_HPP_
 #define GPE_CORE__SE2_POSE_ESTIMATION_HPP_
 
+#include <optimizable_graph.h>
+#include <vector>
+#include <set>
+#include <cmath>
+
 #include <Eigen/StdVector>
 #include <Eigen/Dense>
 
@@ -32,9 +37,7 @@
 
 #include <gpe_msgs/msg/landmark2_d_array.hpp>
 
-#include <vector>
-#include <set>
-#include <cmath>
+#include <gpe_core/types.hpp>
 
 namespace gpe
 {
@@ -44,65 +47,70 @@ class SE2PoseEstimation
 public:
   /** Default constructor */
   SE2PoseEstimation();
+
   /** Constructor with a given set of landmarks */
-  SE2PoseEstimation(const std::vector<Eigen::Vector2d> & landmarks);
-  /** Constructor with a given set of landmarks and IDs */
-  SE2PoseEstimation(
-    const std::vector<Eigen::Vector2d> & landmarks,
-    const std::vector<unsigned int> & ids
-  );
+  SE2PoseEstimation(const LandmarkArray & landmarks_msg);
 
-  /** Add a new landmark to the graph */
-  void add_landmark(const Eigen::Vector2d & landmark);
-  /** Add a new landmark to the graph with the given ID.
-      Returns false if the ID already exists.
-  */
-  bool add_landmark(const Eigen::Vector2d & landmark, const unsigned int id);
-  /** Add a new landmark to the graph from the msg format */
-  bool add_landmark(const gpe_msgs::msg::Landmark2D & landmark_msg);
-  /** Add new landmarks to the graph */
-  void add_landmarks(const std::vector<Eigen::Vector2d> & landmarks);
-  /** Add a new landmarks to the graph with a list of IDs.
-     Sizes must match and IDs must be unique.
-     This is an atomic operation. All IDs must be valid.
-  */
-  bool add_landmarks(
-    const std::vector<Eigen::Vector2d> & landmarks,
-    const std::vector<unsigned int> & ids
-  );
-  /** Add new landmarks to the graph from the msg format */
-  bool add_landmarks(const gpe_msgs::msg::Landmark2DArray & landmarks_msg);
+  /**
+   * Add a new landmark to the graph.
+   * If the landmark has an unknown ID (-1), it will be given one using node_id_
+   * If the landmark has a given positive ID, it will be used in the graph
+   *
+   * @param landmark_msg The landmark object.
+   * @return True if the landmark was successfully added, false if the ID already exists.
+   */
+  bool add_landmark(const Landmark & landmark_msg);
 
-  /** Get the current list of landmarks */
-  std::vector<Eigen::Vector2d> get_landmarks() const;
+  /**
+   * Add new landmarks to the graph.
+   * This operation is atomic, all landmarks are added, or none.
+   *
+   * @param landmark_msg The landmark object.
+   * @return True if the landmark was successfully added.
+             False if any of the IDs already exists or if there are duplicate IDs.
+   */
+  bool add_landmarks(const LandmarkArray & landmarks_msg);
 
-  /** Set the initial pose estimation.
-      Calling this function will remove all measurements.
-  */
+  /**
+   * Get the current list of landmarks
+   * @return A Landmark2DArray object with the list of landmarks
+   */
+  LandmarkArray get_landmarks() const;
+
+  /**
+   * Set the initial pose estimation.
+   * Calling this function will remove all measurements.
+   *
+   * @param initial_pose The estimate for the current robot pose
+   */
   void set_initial_pose(const g2o::SE2 & initial_pose);
 
-  /** Add a new measurement with its information matrix */
-  void add_measurement(
-    const Eigen::Vector2d & measurement,
-    const Eigen::Matrix2d & inf_matrix
-  );
+  /**
+   * Add a new measurement to a PointXY landmark
+   *
+   * @param measurement The MeasurementXY to add with its information matrix
+   */
+  void add_measurement(const MeasurementXY & measurement);
 
-  /** Add a new measurement with its information matrix and the ID of the landmark
-      Returns false if the landmark_id does not exist in the graph
-      Returns false if the measurement's edge already exists
-  */
-  bool add_measurement(
-    const Eigen::Vector2d & measurement,
-    const Eigen::Matrix2d & inf_matrix,
-    const unsigned int landmark_id
-  );
+  /**
+   * Add a new measurement with its information matrix and the ID of the landmark
+   *
+   * @param measurement The measurement to add, as a 2D vector
+   * @param inf_matrix The information matrix for the measurement
+   * @param landmark_id The ID of the landmark to associate the measurement with
+   * @return false if the landmark_id does not exist in the graph
+             or if the measurement's edge already exists
+   */
+  bool add_measurement(const MeasurementXY & measurement, const unsigned int landmark_id);
 
   /** Remove all measurements from the graph */
   void reset_measurements();
 
-  /** Run the optimization and return the estimated pose.
-      The estimated pose is saved as the initial estimation for the next call.
-  */
+  /**
+   * Run the optimization and return the estimated pose.
+   * The estimated pose is saved as the initial estimation for the next call.
+   * @return The estimated pose as a g2o::SE2 object.
+   */
   g2o::SE2 estimate();
 
   /** Returns the last estimated pose */
@@ -123,6 +131,7 @@ private:
   /** Increase the ID counter used for the IDs.
       This checks if the next ID is already taken by the user to skip it.
   */
+
   void increase_node_id();
   /** Changes the ID used for the pose.
       This function is called whenever a new landmark needs the ID used by the pose.
@@ -133,7 +142,7 @@ private:
   g2o::SE2 pose_;
 
   // List of measurements that are not associated yet to any landmark
-  std::vector<g2o::EdgeSE2PointXY *> detached_measurements_;
+  std::vector<g2o::OptimizableGraph::Edge *> detached_measurements_;
 
   // G2O graph IDs and lookup tables
   // ID counter used for landmarks. Starts at zero.

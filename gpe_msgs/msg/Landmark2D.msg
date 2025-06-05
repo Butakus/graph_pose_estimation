@@ -2,10 +2,11 @@
 #   Defaults to /map
 string frame_id "/map"
 
-# Landmark information:
 # ID: Integer. Will be used as node ID in the graph.
-#     ID must be a positive integer with a max value of 2147483647.
-int32 id
+#   ID must be a positive integer with a max value of 2147483647.
+#   The default value of -1 is used to represent a landmark with unknown ID
+#   Landmarks with unknown ID will be automatically assigned a positive ID when added to the graph
+int32 id -1
 
 # Type: Landmark type. Possible options:
 #    * PointXY: Point in 2D space without orientation
@@ -14,7 +15,7 @@ uint8 TYPE_XY = 0  # With this type, theta value is ignored
 uint8 TYPE_SE2 = 1
 uint8 type
 
-# Landmark cooridnates
-float64 x
-float64 y
-float64 theta
+# Landmark coordinates
+float64 x 0.0
+float64 y 0.0
+float64 theta 0.0

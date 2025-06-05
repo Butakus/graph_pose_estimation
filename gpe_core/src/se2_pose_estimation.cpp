@@ -27,18 +27,10 @@ SE2PoseEstimation::SE2PoseEstimation()
   initialize_optimizer();
 }
 
-SE2PoseEstimation::SE2PoseEstimation(const std::vector<Eigen::Vector2d> & landmarks)
+SE2PoseEstimation::SE2PoseEstimation(const LandmarkArray & landmarks)
 {
   initialize_optimizer();
   add_landmarks(landmarks);
-}
-
-SE2PoseEstimation::SE2PoseEstimation(
-  const std::vector<Eigen::Vector2d> & landmarks,
-  const std::vector<unsigned int> & ids)
-{
-  initialize_optimizer();
-  add_landmarks(landmarks, ids);
 }
 
 
@@ -60,101 +52,84 @@ void SE2PoseEstimation::initialize_optimizer()
   set_initial_pose(g2o::SE2());
 }
 
-void SE2PoseEstimation::add_landmark(const Eigen::Vector2d & landmark)
+bool SE2PoseEstimation::add_landmark(const Landmark & landmark_msg)
 {
-  increase_node_id();
-  add_landmark(landmark, node_id_);
-}
+  // If the landmark does not have an ID, assign an automatic ID
+  int landmark_id = landmark_msg.id;
+  if (landmark_id == -1) {
+    increase_node_id();
+    landmark_id = node_id_;
+  }
 
-bool SE2PoseEstimation::add_landmark(
-  const Eigen::Vector2d & landmark,
-  const unsigned int id)
-{
   // Change pose_id_ if there is conflict.
-  if (id == pose_id_) {
+  if (landmark_id == static_cast<int>(pose_id_)) {
     update_pose_id();
   }
 
+  Eigen::Vector2d landmark {landmark_msg.x, landmark_msg.y};
+
   // Add landmark vertex to optimizer
+  // TODO: Change vertex type according to landmark type
   g2o::VertexPointXY * landmark_vertex = new g2o::VertexPointXY();
-  landmark_vertex->setId(id);
+  landmark_vertex->setId(landmark_id);
   landmark_vertex->setFixed(true);
   landmark_vertex->setEstimate(landmark);
   bool result_ok = optimizer_.addVertex(landmark_vertex);
   if (result_ok) {
     // If the vertex was successfully added, save the ID
-    landmark_ids_.insert(id);
+    landmark_ids_.insert(landmark_id);
   } else {
     delete landmark_vertex;
   }
   return result_ok;
 }
 
-bool SE2PoseEstimation::add_landmark(const gpe_msgs::msg::Landmark2D & landmark_msg)
+bool SE2PoseEstimation::add_landmarks(const LandmarkArray & landmarks_msg)
 {
-  Eigen::Vector2d landmark {landmark_msg.x, landmark_msg.y};
-  return add_landmark(landmark, landmark_msg.id);
-}
-
-void SE2PoseEstimation::add_landmarks(const std::vector<Eigen::Vector2d> & landmarks)
-{
-  for (const auto & l : landmarks) {
-    add_landmark(l);
-  }
-}
-
-bool SE2PoseEstimation::add_landmarks(
-  const std::vector<Eigen::Vector2d> & landmarks,
-  const std::vector<unsigned int> & ids
-)
-{
-  assert(
-    "Vector of landmarks and IDs size mismatch" &&
-    landmarks.size() == ids.size()
-  );
-
   // Check all IDs before adding any landmark to the graph
-  for (const auto & id : ids) {
+  std::set<unsigned int> unique_ids;
+  size_t positive_count = 0;
+  for (const auto & landmark : landmarks_msg.landmarks) {
+    // Add positive IDs to a different set to check for duplicates
+    if (landmark.id >= 0) {
+      positive_count++;
+      unique_ids.insert(static_cast<unsigned int>(landmark.id));
+    }
     // Check if the new ID is already in the set, and return false if ID exists
-    if (landmark_ids_.contains(id)) {
+    if (landmark_ids_.contains(landmark.id)) {
       return false;
     }
   }
   // Then, check if the list of IDs has duplicates
-  std::set<unsigned int> unique_ids{ids.begin(), ids.end()};
-  if (unique_ids.size() != ids.size()) {
+  if (unique_ids.size() != positive_count) {
     return false;
   }
 
-
-  // At this point, all IDs are valid. Add landmarks with the specified IDs
-  for (size_t i = 0; i < landmarks.size(); i++) {
-    add_landmark(landmarks[i], ids[i]);
+  // At this point, all IDs are valid or unknown (-1)
+  for (const auto & landmark : landmarks_msg.landmarks) {
+    add_landmark(landmark);
   }
 
   return true;
 }
 
-bool SE2PoseEstimation::add_landmarks(const gpe_msgs::msg::Landmark2DArray & landmarks_msg)
+gpe_msgs::msg::Landmark2DArray SE2PoseEstimation::get_landmarks() const
 {
-  std::vector<Eigen::Vector2d> landmarks;
-  std::vector<unsigned int> ids;
-  for (const auto & landmark_msg : landmarks_msg.landmarks) {
-    landmarks.emplace_back(landmark_msg.x, landmark_msg.y);
-    ids.push_back(landmark_msg.id);
-  }
-  return add_landmarks(landmarks, ids);
-}
-
-std::vector<Eigen::Vector2d> SE2PoseEstimation::get_landmarks() const
-{
-  std::vector<Eigen::Vector2d> landmarks;
-  landmarks.reserve(optimizer_.vertices().size());
+  LandmarkArray landmarks;
+  landmarks.landmarks.reserve(optimizer_.vertices().size());
   for (const auto & [id, vertex] : optimizer_.vertices()) {
+    // TODO: Check for different types of landmark
     auto vertex_xy = dynamic_cast<g2o::VertexPointXY *>(vertex);
     // Only extract fixed vertices that have an ID different from the robot pose
     if (id != static_cast<int>(pose_id_) && vertex_xy != nullptr && vertex_xy->fixed()) {
-      landmarks.push_back(vertex_xy->estimate());
+      Eigen::Vector2d position = vertex_xy->estimate();
+      Landmark l;
+      l.id = id;
+      l.type = Landmark::TYPE_XY;
+      l.x = position.x();
+      l.y = position.y();
+      l.theta = 0.0;
+      landmarks.landmarks.push_back(l);
     }
   }
   return landmarks;
@@ -204,35 +179,33 @@ void SE2PoseEstimation::set_initial_pose(const g2o::SE2 & initial_pose)
 }
 
 
-void SE2PoseEstimation::add_measurement(
-  const Eigen::Vector2d & measurement,
-  const Eigen::Matrix2d & inf_matrix)
+void SE2PoseEstimation::add_measurement(const MeasurementXY & measurement)
 {
   g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY();
 
   // The second vertex (landmark ID) will be set in the association step.
   landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
 
-  landmark_observation->setMeasurement(measurement);
-  landmark_observation->setInformation(inf_matrix);
+  landmark_observation->setMeasurement(measurement.data);
+  landmark_observation->setInformation(measurement.inf_matrix);
   detached_measurements_.push_back(landmark_observation);
 }
 
 bool SE2PoseEstimation::add_measurement(
-  const Eigen::Vector2d & measurement,
-  const Eigen::Matrix2d & inf_matrix,
-  const unsigned int landmark_id)
+  const MeasurementXY & measurement,
+  const unsigned int landmark_id
+)
 {
   auto landmark_vertex = optimizer_.vertex(landmark_id);
   if (landmark_vertex == nullptr) {
     return false;
   }
-  g2o::EdgeSE2PointXY * landmark_observation = new g2o::EdgeSE2PointXY();
+  MeasurementXY::EdgeType * landmark_observation = new MeasurementXY::EdgeType();
   landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
   landmark_observation->vertices()[1] = landmark_vertex;
 
-  landmark_observation->setMeasurement(measurement);
-  landmark_observation->setInformation(inf_matrix);
+  landmark_observation->setMeasurement(measurement.data);
+  landmark_observation->setInformation(measurement.inf_matrix);
   return optimizer_.addEdge(landmark_observation);
 }
 
