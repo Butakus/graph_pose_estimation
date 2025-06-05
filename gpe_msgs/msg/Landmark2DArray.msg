@@ -1,2 +1,2 @@
 # An array of landmarks
-Landmark[] landmarks
+Landmark2D[] landmarks

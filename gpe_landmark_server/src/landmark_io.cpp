@@ -22,7 +22,7 @@
 #include <yaml-cpp/yaml.h>
 
 namespace fs = std::filesystem;
-using Landmark = gpe_msgs::msg::Landmark;
+using Landmark = gpe_msgs::msg::Landmark2D;
 
 namespace gpe
 {

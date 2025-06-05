@@ -26,7 +26,7 @@ namespace gpe
 
 TEST(LandmarkIOTests, file_parse_test)
 {
-  using Landmark = gpe_msgs::msg::Landmark;
+  using Landmark = gpe_msgs::msg::Landmark2D;
   fs::path yaml_path = fs::path(TEST_DIRECTORY) / fs::path("test_landmarks.yaml");
   std::map<int, Landmark> landmarks = load_landmarks(yaml_path);
   ASSERT_NO_THROW(landmarks = load_landmarks(yaml_path));

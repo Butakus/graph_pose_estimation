@@ -35,7 +35,7 @@ SE2PoseEstimation::SE2PoseEstimation(const std::vector<Eigen::Vector2d> & landma
 
 SE2PoseEstimation::SE2PoseEstimation(
   const std::vector<Eigen::Vector2d> & landmarks,
-  const std::vector<unsigned long> & ids)
+  const std::vector<unsigned int> & ids)
 {
   initialize_optimizer();
   add_landmarks(landmarks, ids);
@@ -68,7 +68,7 @@ void SE2PoseEstimation::add_landmark(const Eigen::Vector2d & landmark)
 
 bool SE2PoseEstimation::add_landmark(
   const Eigen::Vector2d & landmark,
-  const unsigned long id)
+  const unsigned int id)
 {
   // Change pose_id_ if there is conflict.
   if (id == pose_id_) {
@@ -90,7 +90,7 @@ bool SE2PoseEstimation::add_landmark(
   return result_ok;
 }
 
-bool SE2PoseEstimation::add_landmark(const gpe_msgs::msg::Landmark & landmark_msg)
+bool SE2PoseEstimation::add_landmark(const gpe_msgs::msg::Landmark2D & landmark_msg)
 {
   Eigen::Vector2d landmark {landmark_msg.x, landmark_msg.y};
   return add_landmark(landmark, landmark_msg.id);
@@ -105,7 +105,7 @@ void SE2PoseEstimation::add_landmarks(const std::vector<Eigen::Vector2d> & landm
 
 bool SE2PoseEstimation::add_landmarks(
   const std::vector<Eigen::Vector2d> & landmarks,
-  const std::vector<unsigned long> & ids
+  const std::vector<unsigned int> & ids
 )
 {
   assert(
@@ -121,7 +121,7 @@ bool SE2PoseEstimation::add_landmarks(
     }
   }
   // Then, check if the list of IDs has duplicates
-  std::set<unsigned long> unique_ids{ids.begin(), ids.end()};
+  std::set<unsigned int> unique_ids{ids.begin(), ids.end()};
   if (unique_ids.size() != ids.size()) {
     return false;
   }
@@ -135,10 +135,10 @@ bool SE2PoseEstimation::add_landmarks(
   return true;
 }
 
-bool SE2PoseEstimation::add_landmarks(const gpe_msgs::msg::LandmarkArray & landmarks_msg)
+bool SE2PoseEstimation::add_landmarks(const gpe_msgs::msg::Landmark2DArray & landmarks_msg)
 {
   std::vector<Eigen::Vector2d> landmarks;
-  std::vector<unsigned long> ids;
+  std::vector<unsigned int> ids;
   for (const auto & landmark_msg : landmarks_msg.landmarks) {
     landmarks.emplace_back(landmark_msg.x, landmark_msg.y);
     ids.push_back(landmark_msg.id);
@@ -221,7 +221,7 @@ void SE2PoseEstimation::add_measurement(
 bool SE2PoseEstimation::add_measurement(
   const Eigen::Vector2d & measurement,
   const Eigen::Matrix2d & inf_matrix,
-  const unsigned long landmark_id)
+  const unsigned int landmark_id)
 {
   auto landmark_vertex = optimizer_.vertex(landmark_id);
   if (landmark_vertex == nullptr) {
@@ -254,7 +254,7 @@ void SE2PoseEstimation::reset_measurements()
 void SE2PoseEstimation::associate_detached_measurements()
 {
   // Check which landmarks already have a measurement attached and skip them
-  std::vector<unsigned long> free_ids;
+  std::vector<unsigned int> free_ids;
   std::vector<Eigen::Vector2d> free_landmarks;
   free_ids.reserve(landmark_ids_.size());
   for (const auto & id : landmark_ids_) {

@@ -19,7 +19,6 @@
 #include <filesystem>
 #include <gpe_core/utils.hpp>
 #include <gpe_core/se2_pose_estimation.hpp>
-#include <gpe_msgs/msg/landmark.hpp>
 #include <gpe_msgs/msg/landmark_detection.hpp>
 #include <gpe_landmark_server/landmark_io.hpp>
 #include <rcutils/cmdline_parser.h>

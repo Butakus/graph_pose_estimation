@@ -11,8 +11,10 @@ find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 set(msg_files
-  "msg/Landmark.msg"
-  "msg/LandmarkArray.msg"
+  "msg/Landmark2D.msg"
+  "msg/Landmark2DArray.msg"
+  "msg/Landmark3D.msg"
+  "msg/Landmark3DArray.msg"
   "msg/LandmarkDetection.msg"
   "msg/LandmarkDetectionArray.msg"
 )

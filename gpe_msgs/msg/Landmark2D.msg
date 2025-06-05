@@ -8,16 +8,13 @@ string frame_id "/map"
 int32 id
 
 # Type: Landmark type. Possible options:
-#    * PointXY: [x, y]
-#    * PointXYZ: [x, y, z]
-#    * Pose2D: [x, y, yaw]
-#    * Pose3D: [x, y, z, roll, pitch, yaw]
-#    * Pose3DQuat: [x, y, z, qx, qy, qz, qw]
-# NOTE: At this moment only PointXY landmarks are supported.
+#    * PointXY: Point in 2D space without orientation
+#    * Pose2D: Pose in 2D space with orientation
+uint8 TYPE_XY = 0  # With this type, theta value is ignored
+uint8 TYPE_SE2 = 1
+uint8 type
 
-# Coords: Array of coordinates.
-#   Length and meaning depend on type.
-# float64[] coords
 # Landmark cooridnates
 float64 x
 float64 y
+float64 theta

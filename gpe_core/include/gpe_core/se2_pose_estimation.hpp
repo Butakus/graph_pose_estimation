@@ -30,7 +30,7 @@
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2_pointxy.h>
 
-#include <gpe_msgs/msg/landmark_array.hpp>
+#include <gpe_msgs/msg/landmark2_d_array.hpp>
 
 #include <vector>
 #include <set>
@@ -49,7 +49,7 @@ public:
   /** Constructor with a given set of landmarks and IDs */
   SE2PoseEstimation(
     const std::vector<Eigen::Vector2d> & landmarks,
-    const std::vector<unsigned long> & ids
+    const std::vector<unsigned int> & ids
   );
 
   /** Add a new landmark to the graph */
@@ -57,9 +57,9 @@ public:
   /** Add a new landmark to the graph with the given ID.
       Returns false if the ID already exists.
   */
-  bool add_landmark(const Eigen::Vector2d & landmark, const unsigned long id);
+  bool add_landmark(const Eigen::Vector2d & landmark, const unsigned int id);
   /** Add a new landmark to the graph from the msg format */
-  bool add_landmark(const gpe_msgs::msg::Landmark & landmark_msg);
+  bool add_landmark(const gpe_msgs::msg::Landmark2D & landmark_msg);
   /** Add new landmarks to the graph */
   void add_landmarks(const std::vector<Eigen::Vector2d> & landmarks);
   /** Add a new landmarks to the graph with a list of IDs.
@@ -68,10 +68,10 @@ public:
   */
   bool add_landmarks(
     const std::vector<Eigen::Vector2d> & landmarks,
-    const std::vector<unsigned long> & ids
+    const std::vector<unsigned int> & ids
   );
   /** Add new landmarks to the graph from the msg format */
-  bool add_landmarks(const gpe_msgs::msg::LandmarkArray & landmarks_msg);
+  bool add_landmarks(const gpe_msgs::msg::Landmark2DArray & landmarks_msg);
 
   /** Get the current list of landmarks */
   std::vector<Eigen::Vector2d> get_landmarks() const;
@@ -94,7 +94,7 @@ public:
   bool add_measurement(
     const Eigen::Vector2d & measurement,
     const Eigen::Matrix2d & inf_matrix,
-    const unsigned long landmark_id
+    const unsigned int landmark_id
   );
 
   /** Remove all measurements from the graph */
@@ -110,9 +110,6 @@ public:
 
   /** Return a reference to the G2O optimizer object. Use with caution! */
   g2o::SparseOptimizer & get_optimizer() {return optimizer_;}
-
-  /** Check if the ID is already taken by a landmark */
-  bool is_landmark_id(const unsigned long id);
 
 private:
   /** Initialize G2O optimizer objects */
@@ -140,11 +137,11 @@ private:
 
   // G2O graph IDs and lookup tables
   // ID counter used for landmarks. Starts at zero.
-  unsigned long node_id_ = 0;
-  std::set<unsigned long> landmark_ids_;
+  unsigned int node_id_ = 0;
+  std::set<unsigned int> landmark_ids_;
   // ID used for the pose. Defaults to 1000000 but can automatically change
   // if a landmark uses that number.
-  unsigned long pose_id_ = 1000000;
+  unsigned int pose_id_ = 1000000;
   // Optimization objects
   g2o::SparseOptimizer optimizer_;
 };

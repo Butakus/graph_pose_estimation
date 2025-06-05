@@ -18,7 +18,6 @@
 #include <gtest/gtest.h>
 #include <gpe_core/se2_pose_estimation.hpp>
 #include <gpe_core/utils.hpp>
-#include <gpe_msgs/msg/landmark_array.hpp>
 
 
 std::vector<Eigen::Vector2d> generate_landmark_points()
@@ -167,7 +166,7 @@ TEST(SE2PoseEstimationTests, add_landmark_list_test)
   // Pass a list of IDs with different size than landmarks
   gpe::SE2PoseEstimation estimator;
   std::vector<Eigen::Vector2d> landmark_points = generate_landmark_points();
-  std::vector<unsigned long> ids = {1, 2, 3};
+  std::vector<unsigned int> ids = {1, 2, 3};
   ASSERT_DEATH(
     estimator.add_landmarks(landmark_points, ids),
     "Vector of landmarks and IDs size mismatch");
@@ -204,7 +203,7 @@ TEST(SE2PoseEstimationTests, add_landmark_msg_test)
 {
   // Add two landmarks with the same ID
   gpe::SE2PoseEstimation estimator;
-  gpe_msgs::msg::Landmark l;
+  gpe_msgs::msg::Landmark2D l;
   l.id = 1;
   l.x = 1.0;
   l.y = 2.0;
@@ -218,9 +217,9 @@ TEST(SE2PoseEstimationTests, add_landmark_array_msg_test)
 {
   // Add two landmarks with the same ID
   gpe::SE2PoseEstimation estimator;
-  gpe_msgs::msg::LandmarkArray landmarks;
+  gpe_msgs::msg::Landmark2DArray landmarks;
   for (int i = 0; i < 5; i++) {
-    gpe_msgs::msg::Landmark l;
+    gpe_msgs::msg::Landmark2D l;
     l.id = i;
     l.x = 2 * i;
     l.y = 2 * i + 1;
