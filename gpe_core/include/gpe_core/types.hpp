@@ -19,10 +19,7 @@
 #define GPE_CORE__TYPES_HPP_
 
 #include <Eigen/Dense>
-#include <Eigen/src/Core/Matrix.h>
-#include <g2o/types/slam2d/se2.h>
-#include <g2o/types/slam2d/edge_se2.h>
-#include <g2o/types/slam2d/edge_se2_pointxy.h>
+#include <g2o/types/slam2d/types_slam2d.h>
 
 #include <gpe_msgs/msg/landmark2_d_array.hpp>
 
@@ -55,6 +52,7 @@ class MeasurementXY
 {
 public:
   using EdgeType = g2o::EdgeSE2PointXY;
+  using VertexType = g2o::VertexPointXY;
 
   MeasurementXY()
   : inf_matrix(Eigen::Matrix2d::Identity())
@@ -93,6 +91,7 @@ class MeasurementSE2
 {
 public:
   using EdgeType = g2o::EdgeSE2;
+  using VertexType = g2o::VertexSE2;
 
   MeasurementSE2()
   : inf_matrix(Eigen::Matrix3d::Identity())
@@ -123,6 +122,14 @@ public:
   g2o::SE2 data {};
   Eigen::Matrix3d inf_matrix {};
 };
+
+// A type alias to access the Measurement's Edge inner type
+template<typename T>
+using EdgeType = T::EdgeType;
+
+// A type alias to access the Measurement's endpoint Vertex inner type
+template<typename T>
+using VertexType = T::VertexType;
 
 }  // namespace gpe
 

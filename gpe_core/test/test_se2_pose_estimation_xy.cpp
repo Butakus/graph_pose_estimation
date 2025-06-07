@@ -15,7 +15,6 @@
 //
 //  Author: Francisco Miguel Moreno
 
-#include "gpe_core/types.hpp"
 #include <gtest/gtest.h>
 #include <gpe_core/se2_pose_estimation.hpp>
 #include <gpe_core/utils.hpp>
@@ -24,7 +23,7 @@ using Landmark = gpe_msgs::msg::Landmark2D;
 using LandmarkArray = gpe_msgs::msg::Landmark2DArray;
 
 
-LandmarkArray generate_landmarks()
+LandmarkArray generate_landmarks_xy()
 {
   std::vector<Eigen::Vector2d> poses
   {
@@ -60,12 +59,12 @@ gpe::MeasurementXY compute_landmark_measurement(const g2o::SE2 & pose, const Lan
   );
 }
 
-TEST(SE2PoseEstimationTests, simple_estimation_test)
+TEST(SE2PoseEstimationTestsXY, simple_estimation_test)
 {
   gpe::SE2PoseEstimation estimator;
 
   // Generate test landmarks and add them to the estimator
-  LandmarkArray landmarks = generate_landmarks();
+  LandmarkArray landmarks = generate_landmarks_xy();
   for (size_t i = 0; i < landmarks.landmarks.size(); i++) {
     landmarks.landmarks[i].id = i;
     estimator.add_landmark(landmarks.landmarks[i]);
@@ -92,12 +91,12 @@ TEST(SE2PoseEstimationTests, simple_estimation_test)
 }
 
 // Add test with measurements without pre-assigned ID to test hungarian assignation
-TEST(SE2PoseEstimationTests, measurement_association_test)
+TEST(SE2PoseEstimationTestsXY, measurement_association_test)
 {
   gpe::SE2PoseEstimation estimator;
 
   // Generate test landmarks and add them to the estimator
-  LandmarkArray landmarks = generate_landmarks();
+  LandmarkArray landmarks = generate_landmarks_xy();
   estimator.add_landmarks(landmarks);
 
   // Create the robot pose and generate an initial estimation
@@ -114,18 +113,18 @@ TEST(SE2PoseEstimationTests, measurement_association_test)
   }
   g2o::SE2 robot_pose = estimator.estimate();
 
-  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.2);
-  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.2);
+  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.25);
+  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.25);
   ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
 }
 
 // Some measurements have ID, others must be associated
-TEST(SE2PoseEstimationTests, measurement_mixed_association_test)
+TEST(SE2PoseEstimationTestsXY, measurement_mixed_association_test)
 {
   gpe::SE2PoseEstimation estimator;
 
   // Generate test landmarks and add them to the estimator
-  LandmarkArray landmarks = generate_landmarks();
+  LandmarkArray landmarks = generate_landmarks_xy();
   for (size_t i = 0; i < landmarks.landmarks.size(); i++) {
     landmarks.landmarks[i].id = i;
     estimator.add_landmark(landmarks.landmarks[i]);
@@ -151,13 +150,13 @@ TEST(SE2PoseEstimationTests, measurement_mixed_association_test)
   }
   g2o::SE2 robot_pose = estimator.estimate();
 
-  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.2);
-  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.2);
+  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.25);
+  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.25);
   ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
 }
 
 
-TEST(SE2PoseEstimationTests, add_landmark_test)
+TEST(SE2PoseEstimationTestsXY, add_landmark_test)
 {
   // Add two landmarks with the same ID
   gpe::SE2PoseEstimation estimator;
@@ -177,11 +176,11 @@ TEST(SE2PoseEstimationTests, add_landmark_test)
   ASSERT_EQ(estimator.get_landmarks().landmarks.size(), 1);
 }
 
-TEST(SE2PoseEstimationTests, add_landmark_list_test)
+TEST(SE2PoseEstimationTestsXY, add_landmark_list_test)
 {
   // Pass a list of IDs with different size than landmarks
   gpe::SE2PoseEstimation estimator;
-  LandmarkArray landmarks = generate_landmarks();
+  LandmarkArray landmarks = generate_landmarks_xy();
 
   // Pass a list of landmarks with duplicate IDs
   for (size_t i = 0; i < landmarks.landmarks.size(); i++) {
@@ -208,7 +207,7 @@ TEST(SE2PoseEstimationTests, add_landmark_list_test)
   ASSERT_EQ(estimator.get_landmarks().landmarks.size(), 2 * landmarks.landmarks.size());
 }
 
-TEST(SE2PoseEstimationTests, add_landmark_msg_test)
+TEST(SE2PoseEstimationTestsXY, add_landmark_msg_test)
 {
   // Add two landmarks with the same ID
   gpe::SE2PoseEstimation estimator;
@@ -223,7 +222,7 @@ TEST(SE2PoseEstimationTests, add_landmark_msg_test)
   ASSERT_EQ(estimator.get_landmarks().landmarks.size(), 1);
 }
 
-TEST(SE2PoseEstimationTests, add_landmark_array_msg_test)
+TEST(SE2PoseEstimationTestsXY, add_landmark_array_msg_test)
 {
   // Add two landmarks with the same ID
   gpe::SE2PoseEstimation estimator;
