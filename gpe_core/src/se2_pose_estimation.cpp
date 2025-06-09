@@ -35,7 +35,7 @@ SE2PoseEstimation::SE2PoseEstimation(const LandmarkArray & landmarks)
 }
 
 
-// Explicit specializations of get_detached_measurement for MeasurementXY / MeasurementSE2 
+// Explicit specializations of get_detached_measurement for MeasurementXY / MeasurementSE2
 template<> std::vector<g2o::OptimizableGraph::Edge *> &
 SE2PoseEstimation::get_detached_measurement<MeasurementXY>() {return detached_measurements_xy_;}
 template<> std::vector<g2o::OptimizableGraph::Edge *> &

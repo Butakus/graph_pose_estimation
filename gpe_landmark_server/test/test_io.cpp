@@ -23,19 +23,33 @@
 namespace fs = std::filesystem;
 namespace gpe
 {
+using Landmark2D = gpe_msgs::msg::Landmark2D;
 
-TEST(LandmarkIOTests, file_parse_test)
+TEST(LandmarkIOTests, file_parse_2d_xy_test)
 {
-  using Landmark = gpe_msgs::msg::Landmark2D;
-  fs::path yaml_path = fs::path(TEST_DIRECTORY) / fs::path("test_landmarks.yaml");
-  std::map<int, Landmark> landmarks = load_landmarks(yaml_path);
-  ASSERT_NO_THROW(landmarks = load_landmarks(yaml_path));
+  fs::path yaml_path = fs::path(TEST_DIRECTORY) / fs::path("test_landmarks_xy.yaml");
+  ASSERT_NO_THROW(load_landmarks_2d(yaml_path));
+  std::map<int, Landmark2D> landmarks = load_landmarks_2d(yaml_path);
   ASSERT_EQ(landmarks.size(), 3);
   for (const auto &[id, l] : landmarks) {
     ASSERT_EQ(l.id, id);
   }
   ASSERT_EQ(landmarks[1].x, -1.0);
   ASSERT_EQ(landmarks[1].y, 3.0);
+}
+
+TEST(LandmarkIOTests, file_parse_2d_se2_test)
+{
+  fs::path yaml_path = fs::path(TEST_DIRECTORY) / fs::path("test_landmarks_se2.yaml");
+  ASSERT_NO_THROW(load_landmarks_2d(yaml_path));
+  std::map<int, Landmark2D> landmarks = load_landmarks_2d(yaml_path);
+  ASSERT_EQ(landmarks.size(), 3);
+  for (const auto &[id, l] : landmarks) {
+    ASSERT_EQ(l.id, id);
+  }
+  ASSERT_EQ(landmarks[2].x, -4.0);
+  ASSERT_EQ(landmarks[1].y, 3.0);
+  ASSERT_EQ(landmarks[8].theta, 1.5);
 }
 
 

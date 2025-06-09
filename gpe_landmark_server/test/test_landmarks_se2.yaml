@@ -10,15 +10,15 @@ frame_id: /map
 #    * Pose2D: [x, y, yaw]
 #    * Pose3D: [x, y, z, roll, pitch, yaw]
 #    * Pose3DQuat: [x, y, z, qx, qy, qz, qw]
-# NOTE: At this moment only PointXY landmarks are supported.
+# NOTE: At this moment only 2D landmark types are supported.
 # Coords: Array of coordinates. Length and meaning depend on type.
 landmarks:
     - id: 8
-      type: PointXY
-      coords: [1.0, 2.0]
+      type: Pose2D
+      coords: [1.0, 2.0, 1.5]
     - id: 1
-      type: PointXY
-      coords: [-1.0, 3.0]
+      type: Pose2D
+      coords: [-1.0, 3.0, -1.1]
     - id: 2
-      type: PointXY
-      coords: [-4.0, -4.0]
+      type: Pose2D
+      coords: [-4.0, -4.0, 0.0]

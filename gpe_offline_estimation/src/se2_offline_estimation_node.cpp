@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
   // }
 
   // Load map of landmarks from YAML file
-  auto landmarks_map = gpe::load_landmarks(landmarks_path);
+  auto landmarks_map = gpe::load_landmarks_2d(landmarks_path);
   std::cout << "Number of landmarks: " << landmarks_map.size() << std::endl;
   for (const auto & [idx, landmark] : landmarks_map) {
     std::cout << "Landmark [" << idx << "]: " << landmark.x << ", " << landmark.y << std::endl;

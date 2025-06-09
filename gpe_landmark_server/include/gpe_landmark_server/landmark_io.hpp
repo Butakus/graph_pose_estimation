@@ -20,14 +20,42 @@
 
 #include <map>
 #include <gpe_msgs/msg/landmark2_d.hpp>
+#include <unordered_map>
 
 namespace gpe
 {
 
-/** Load a set of landmarks from a YAML file.
-    Returns a map where the key is the landmark ID and the value is the landmark.
-*/
-std::map<int, gpe_msgs::msg::Landmark2D> load_landmarks(const std::string & filename);
+/**
+ * Load a set of landmarks from a YAML file.
+ *
+ * @param filename the pat hto the YAML file with the landmark data
+ * @return A map where the key is the landmark ID and the value is the Landmark2D object.
+ */
+std::map<int, gpe_msgs::msg::Landmark2D> load_landmarks_2d(const std::string & filename);
+// std::map<int, gpe_msgs::msg::Landmark2D> load_landmarks_3d(const std::string & filename);
+
+namespace landmark_io
+{
+  static const std::unordered_map<std::string, size_t> landmark_type_size
+  {
+    {"PointXY", 2},    // x, y
+    {"Pose2D", 3},     // x, y, theta
+    // Not supported yet
+    // {"PointXYZ", 3},   // x, y, z
+    // {"Pose3D", 6},     // x, y, z, roll, pitch, yaw
+    // {"Pose3DQuat", 7}  // x, y, z, qx, qy, qz, qw
+  };
+
+  static const std::unordered_map<std::string, unsigned char> landmark_type_conversions
+  {
+    {"PointXY", gpe_msgs::msg::Landmark2D::TYPE_XY},
+    {"Pose2D", gpe_msgs::msg::Landmark2D::TYPE_SE2},
+    // Not supported yet
+    // {"PointXYZ", 3},
+    // {"Pose3D", 6},
+    // {"Pose3DQuat", 7}
+  };
+}  // namespace landmark_io
 
 }  // namespace gpe
 

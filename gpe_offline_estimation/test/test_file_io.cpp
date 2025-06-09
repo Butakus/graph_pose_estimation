@@ -47,7 +47,7 @@ TEST(FileParsingTests, find_measurement_files)
 TEST(FileParsingTests, load_landmarks)
 {
   // Load map of landmarks from YAML file
-  auto landmarks_map = gpe::load_landmarks(landmarks_path);
+  auto landmarks_map = gpe::load_landmarks_2d(landmarks_path);
   ASSERT_EQ(landmarks_map.size(), 10);
   for (const auto &[id, l] : landmarks_map) {
     EXPECT_EQ(l.id, id);
