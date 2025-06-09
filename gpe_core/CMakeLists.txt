@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(gpe_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(vision_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(g2o REQUIRED)
@@ -26,6 +27,22 @@ target_link_libraries(gpe_utils INTERFACE
   Eigen3::Eigen
   tf2::tf2
   ${geometry_msgs_TARGETS}
+)
+
+add_library(gpe_types INTERFACE)
+target_compile_features(gpe_types INTERFACE cxx_std_20)
+target_sources(gpe_types PUBLIC
+  FILE_SET HEADERS
+  BASE_DIRS
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  FILES
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/types.hpp>
+)
+target_link_libraries(gpe_types INTERFACE
+  Eigen3::Eigen
+  g2o::types_slam2d
+  ${gpe_msgs_TARGETS}
+  ${vision_msgs_TARGETS}
 )
 
 add_library(gpe_hungarian SHARED
@@ -47,9 +64,7 @@ target_include_directories(gpe_se2_pose_estimation PUBLIC
 )
 target_link_libraries(gpe_se2_pose_estimation
   PUBLIC
-    Eigen3::Eigen
-    ${gpe_msgs_TARGETS}
-    g2o::types_slam2d
+    gpe_types
   PRIVATE
     g2o::solver_cholmod
     gpe_hungarian
@@ -60,7 +75,7 @@ install(
   DESTINATION include
 )
 install(
-  TARGETS gpe_se2_pose_estimation gpe_hungarian gpe_utils
+  TARGETS gpe_se2_pose_estimation gpe_hungarian gpe_utils gpe_types
   EXPORT export_${PROJECT_NAME}
   FILE_SET HEADERS
   ARCHIVE DESTINATION lib
@@ -93,6 +108,7 @@ ament_export_dependencies(
   tf2
   geometry_msgs
   gpe_msgs
+  vision_msgs
   g2o
   Eigen3
 )

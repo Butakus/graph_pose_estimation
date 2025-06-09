@@ -22,6 +22,8 @@
 #include <g2o/types/slam2d/types_slam2d.h>
 
 #include <gpe_msgs/msg/landmark2_d_array.hpp>
+#include <stdexcept>
+#include <vision_msgs/msg/detection2_d.hpp>
 
 namespace gpe
 {
@@ -71,7 +73,22 @@ public:
     inf_matrix(std::move(inf_matrix))
   {}
 
-  // TODO: Add constructor from vision_msgs detection
+  // Constructor from vision_msgs detection
+  MeasurementXY(const vision_msgs::msg::Detection2D & detecion_msg)
+  : inf_matrix(Eigen::Matrix2d::Identity())
+  {
+    // There must be at least 1 detectio hypothesis. Only the first one will be used
+    if (detecion_msg.results.size() == 0) {
+      throw std::invalid_argument("Detection2D message has an empty list of hypothesis");
+    }
+    data.x() = detecion_msg.results[0].pose.pose.position.x;
+    data.y() = detecion_msg.results[0].pose.pose.position.y;
+    inf_matrix(0, 0) = detecion_msg.results[0].pose.covariance[0];
+    inf_matrix(0, 1) = detecion_msg.results[0].pose.covariance[1];
+    inf_matrix(1, 0) = detecion_msg.results[0].pose.covariance[6];
+    inf_matrix(1, 1) = detecion_msg.results[0].pose.covariance[7];
+  }
+
 
   [[nodiscard]] double x() {return data.x();}
   [[nodiscard]] double y() {return data.y();}
@@ -110,7 +127,28 @@ public:
     inf_matrix(std::move(inf_matrix))
   {}
 
-  // TODO: Add constructor from vision_msgs detection
+  // Constructor from vision_msgs detection
+  MeasurementSE2(const vision_msgs::msg::Detection2D & detecion_msg)
+  : inf_matrix(Eigen::Matrix3d::Identity())
+  {
+    // There must be at least 1 detectio hypothesis. Only the first one will be used
+    if (detecion_msg.results.size() == 0) {
+      throw std::invalid_argument("Detection2D message has an empty list of hypothesis");
+    }
+    data.setTranslation({
+        detecion_msg.results[0].pose.pose.position.x,
+        detecion_msg.results[0].pose.pose.position.y
+    });
+    inf_matrix(0, 0) = detecion_msg.results[0].pose.covariance[0];
+    inf_matrix(0, 1) = detecion_msg.results[0].pose.covariance[1];
+    inf_matrix(0, 2) = detecion_msg.results[0].pose.covariance[5];
+    inf_matrix(1, 0) = detecion_msg.results[0].pose.covariance[6];
+    inf_matrix(1, 1) = detecion_msg.results[0].pose.covariance[7];
+    inf_matrix(1, 2) = detecion_msg.results[0].pose.covariance[11];
+    inf_matrix(2, 0) = detecion_msg.results[0].pose.covariance[30];
+    inf_matrix(2, 1) = detecion_msg.results[0].pose.covariance[31];
+    inf_matrix(2, 2) = detecion_msg.results[0].pose.covariance[35];
+  }
 
   [[nodiscard]] double x() {return data.translation().x();}
   [[nodiscard]] double y() {return data.translation().y();}

@@ -87,7 +87,7 @@ bool validate_yaml_common_keys(const YAML::Node & node)
     // Check that size of coords list matches the size for the given type
     if (!(node["coords"].size() == landmark_io::landmark_type_size.at(l_type))) {
       std::cerr << "Landmark 'coords' does not match size for type " << l_type
-      << " which is " << landmark_io::landmark_type_size.at(l_type) << std::endl;
+                << " which is " << landmark_io::landmark_type_size.at(l_type) << std::endl;
       valid = false;
     }
   }
@@ -98,7 +98,7 @@ bool validate_yaml_common_keys(const YAML::Node & node)
 bool validate_yaml_2d_type_keys(const YAML::Node & node)
 {
   bool valid = true;
-  if (node ["type"]) {
+  if (node["type"]) {
     const std::string l_type = node["type"].as<std::string>();
     if (!(l_type == "PointXY" || l_type == "Pose2D")) {
       std::cerr << "Landmark 'type' is not PointXY or Pose2D. " << std::endl;

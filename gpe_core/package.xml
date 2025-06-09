@@ -11,6 +11,7 @@
 
   <depend>gpe_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>vision_msgs</depend>
   <depend>tf2</depend>
   <depend>eigen</depend>
   <depend>libg2o</depend>

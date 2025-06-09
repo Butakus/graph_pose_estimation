@@ -7,10 +7,8 @@ target_include_directories(test_file_io PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 target_compile_features(test_file_io PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(test_file_io
-  gpe_msgs
-  gpe_landmark_server
-)
 target_link_libraries(test_file_io
   file_io
+  gpe_landmark_server::gpe_landmark_io
+  ${gpe_msgs_TARGETS}
 )
