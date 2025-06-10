@@ -96,7 +96,7 @@ int main(int argc, char ** argv)
     std::cout << "##########################################" << std::endl;
     std::cout << "Processing file with timestamp: " << timestamp << std::endl;
     // First, find if there is a pose with this timestamp
-    if (gt_poses_map.find(timestamp) == gt_poses_map.end()) {
+    if (!gt_poses_map.contains(timestamp)) {
       std::cerr << "WARNING: Could not find a pose for timestamp: " << timestamp
                 << ". Skipping measurements" << std::endl;
       continue;

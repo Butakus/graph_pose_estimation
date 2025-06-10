@@ -23,7 +23,7 @@
 
 #include <gpe_msgs/msg/landmark2_d_array.hpp>
 #include <stdexcept>
-#include <vision_msgs/msg/detection2_d.hpp>
+#include <vision_msgs/msg/detection3_d.hpp>
 
 namespace gpe
 {
@@ -74,7 +74,7 @@ public:
   {}
 
   // Constructor from vision_msgs detection
-  MeasurementXY(const vision_msgs::msg::Detection2D & detecion_msg)
+  MeasurementXY(const vision_msgs::msg::Detection3D & detecion_msg)
   : inf_matrix(Eigen::Matrix2d::Identity())
   {
     // There must be at least 1 detectio hypothesis. Only the first one will be used
@@ -83,10 +83,12 @@ public:
     }
     data.x() = detecion_msg.results[0].pose.pose.position.x;
     data.y() = detecion_msg.results[0].pose.pose.position.y;
-    inf_matrix(0, 0) = detecion_msg.results[0].pose.covariance[0];
-    inf_matrix(0, 1) = detecion_msg.results[0].pose.covariance[1];
-    inf_matrix(1, 0) = detecion_msg.results[0].pose.covariance[6];
-    inf_matrix(1, 1) = detecion_msg.results[0].pose.covariance[7];
+    Eigen::Matrix2d cov_matrix;
+    cov_matrix(0, 0) = detecion_msg.results[0].pose.covariance[0];
+    cov_matrix(0, 1) = detecion_msg.results[0].pose.covariance[1];
+    cov_matrix(1, 0) = detecion_msg.results[0].pose.covariance[6];
+    cov_matrix(1, 1) = detecion_msg.results[0].pose.covariance[7];
+    inf_matrix = cov_matrix.inverse();
   }
 
 
@@ -128,7 +130,7 @@ public:
   {}
 
   // Constructor from vision_msgs detection
-  MeasurementSE2(const vision_msgs::msg::Detection2D & detecion_msg)
+  MeasurementSE2(const vision_msgs::msg::Detection3D & detecion_msg)
   : inf_matrix(Eigen::Matrix3d::Identity())
   {
     // There must be at least 1 detectio hypothesis. Only the first one will be used
@@ -139,15 +141,17 @@ public:
         detecion_msg.results[0].pose.pose.position.x,
         detecion_msg.results[0].pose.pose.position.y
     });
-    inf_matrix(0, 0) = detecion_msg.results[0].pose.covariance[0];
-    inf_matrix(0, 1) = detecion_msg.results[0].pose.covariance[1];
-    inf_matrix(0, 2) = detecion_msg.results[0].pose.covariance[5];
-    inf_matrix(1, 0) = detecion_msg.results[0].pose.covariance[6];
-    inf_matrix(1, 1) = detecion_msg.results[0].pose.covariance[7];
-    inf_matrix(1, 2) = detecion_msg.results[0].pose.covariance[11];
-    inf_matrix(2, 0) = detecion_msg.results[0].pose.covariance[30];
-    inf_matrix(2, 1) = detecion_msg.results[0].pose.covariance[31];
-    inf_matrix(2, 2) = detecion_msg.results[0].pose.covariance[35];
+    Eigen::Matrix3d cov_matrix;
+    cov_matrix(0, 0) = detecion_msg.results[0].pose.covariance[0];
+    cov_matrix(0, 1) = detecion_msg.results[0].pose.covariance[1];
+    cov_matrix(0, 2) = detecion_msg.results[0].pose.covariance[5];
+    cov_matrix(1, 0) = detecion_msg.results[0].pose.covariance[6];
+    cov_matrix(1, 1) = detecion_msg.results[0].pose.covariance[7];
+    cov_matrix(1, 2) = detecion_msg.results[0].pose.covariance[11];
+    cov_matrix(2, 0) = detecion_msg.results[0].pose.covariance[30];
+    cov_matrix(2, 1) = detecion_msg.results[0].pose.covariance[31];
+    cov_matrix(2, 2) = detecion_msg.results[0].pose.covariance[35];
+    inf_matrix = cov_matrix.inverse();
   }
 
   [[nodiscard]] double x() {return data.translation().x();}
