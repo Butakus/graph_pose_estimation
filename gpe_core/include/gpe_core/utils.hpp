@@ -22,7 +22,7 @@
 
 #include <Eigen/Dense>
 #include <tf2/LinearMath/Quaternion.hpp>
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 
 #include <geometry_msgs/msg/quaternion.hpp>
 
