@@ -15,6 +15,8 @@
 //
 //  Author: Francisco Miguel Moreno
 
+#include <variant>
+
 #include <gpe_core/types.hpp>
 #include <gpe_core/hungarian.hpp>
 #include <gpe_core/se2_pose_estimation.hpp>
@@ -87,8 +89,6 @@ bool SE2PoseEstimation::add_landmark(const Landmark & landmark_msg)
   if (landmark_id == static_cast<int>(pose_id_)) {
     update_pose_id();
   }
-
-  Eigen::Vector2d landmark {landmark_msg.x, landmark_msg.y};
 
   // Add landmark vertex to optimizer. Change vertex type according to landmark type
   g2o::OptimizableGraph::Vertex * landmark_vertex;
@@ -220,53 +220,56 @@ void SE2PoseEstimation::set_initial_pose(const g2o::SE2 & initial_pose)
   robot_pose_vertex->setEstimate(initial_pose);
 }
 
-template<typename Measurement>
 void SE2PoseEstimation::add_measurement(const Measurement & measurement)
 {
-  EdgeType<Measurement> * landmark_observation = new Measurement::EdgeType();
+  // Actual visitor function that adds a measurement based on the Measurement variant type
+  auto add_measurement_func = [this](auto && m)
+    {
+      // Extract the measurement type held by the variant
+      using MeasurementT = std::decay_t<decltype(m)>;
+      EdgeType<MeasurementT> * landmark_observation = new MeasurementT::EdgeType();
 
-  // The second vertex (landmark ID) will be set in the association step.
-  landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
+      // The second vertex (landmark ID) will be set in the association step.
+      landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
 
-  landmark_observation->setMeasurement(measurement.data);
-  landmark_observation->setInformation(measurement.inf_matrix);
-  auto & detached_measurements = get_detached_measurement<Measurement>();
-  detached_measurements.push_back(landmark_observation);
+      landmark_observation->setMeasurement(m.data);
+      landmark_observation->setInformation(m.inf_matrix);
+      auto & detached_measurements = get_detached_measurement<MeasurementT>();
+      detached_measurements.push_back(landmark_observation);
+    };
+  // Call the lambda with the correct Measurement type
+  std::visit(add_measurement_func, measurement);
 }
 
-template<typename Measurement>
 bool SE2PoseEstimation::add_measurement(
   const Measurement & measurement,
   const unsigned int landmark_id
 )
 {
-  auto landmark_vertex = optimizer_.vertex(landmark_id);
+  // Get the vertex with the detected landmark or return
+  const auto landmark_vertex = optimizer_.vertex(landmark_id);
   if (landmark_vertex == nullptr) {
     return false;
   }
-  EdgeType<Measurement> * landmark_observation = new Measurement::EdgeType();
-  landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
-  landmark_observation->vertices()[1] = landmark_vertex;
 
-  landmark_observation->setMeasurement(measurement.data);
-  landmark_observation->setInformation(measurement.inf_matrix);
-  return optimizer_.addEdge(landmark_observation);
+  // Actual visitor function that adds a measurement based on the Measurement variant type
+  auto add_measurement_func = [this, &landmark_vertex](auto && m)
+    {
+      // Extract the measurement type held by the variant
+      using MeasurementT = std::decay_t<decltype(m)>;
+
+      EdgeType<MeasurementT> * landmark_observation = new MeasurementT::EdgeType();
+      landmark_observation->vertices()[0] = optimizer_.vertex(pose_id_);
+      landmark_observation->vertices()[1] = landmark_vertex;
+
+      landmark_observation->setMeasurement(m.data);
+      landmark_observation->setInformation(m.inf_matrix);
+      return optimizer_.addEdge(landmark_observation);
+    };
+
+  // Call the lambda with the correct Measurement type
+  return std::visit(add_measurement_func, measurement);
 }
-
-/** add _measurement methods are only specialized for  MeasyrementXY / MeasyrementSE2 types */
-template void SE2PoseEstimation::add_measurement(const MeasurementXY & measurement);
-template void SE2PoseEstimation::add_measurement(const MeasurementSE2 & measurement);
-
-template bool SE2PoseEstimation::add_measurement(
-  const MeasurementXY & measurement,
-  const unsigned int landmark_id
-);
-
-template bool SE2PoseEstimation::add_measurement(
-  const MeasurementSE2 & measurement,
-  const unsigned int landmark_id
-);
-
 
 void SE2PoseEstimation::reset_measurements()
 {
@@ -287,20 +290,20 @@ void SE2PoseEstimation::reset_measurements()
   detached_measurements_se2_.clear();
 }
 
-template<typename Measurement>
+template<typename M>
 void SE2PoseEstimation::associate_detached_measurements()
 {
   // Get a reference to the selected list of detached measurements
-  auto & detached_measurements = get_detached_measurement<Measurement>();
+  auto & detached_measurements = get_detached_measurement<M>();
 
   // Get the type of measurement Edge to select
-  using Vertex = VertexType<Measurement>;
+  using Vertex = VertexType<M>;
 
   // Check which landmarks already have a measurement attached and skip them
   std::vector<unsigned int> free_ids;
   for (const auto & id : landmark_ids_) {
     // Only use the landmarks that are not connected
-    auto landmark = dynamic_cast<Vertex *>(optimizer_.vertex(id));
+    const auto landmark = dynamic_cast<Vertex *>(optimizer_.vertex(id));
     if (landmark != nullptr && landmark->edges().size() == 0) {
       free_ids.push_back(id);
     }

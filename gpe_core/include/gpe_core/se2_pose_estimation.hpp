@@ -86,26 +86,24 @@ public:
   void set_initial_pose(const g2o::SE2 & initial_pose);
 
   /**
-   * Add a new measurement to a PointXY landmark
+   * Add a new measurement to a landmark.
+   * The measurement can be of any of the types included in the Measurement variant.
+   * The measurement must include its information matrix.
    *
-   * @tparam Measurement The measurement type.
-   *         This method is only specialized for MeasyrementXY and MeasyrementSE2.
-   * @param measurement The MeasurementXY to add with its information matrix
+   * @param measurement The Measurement variant to add
    */
-  template<typename Measurement>
   void add_measurement(const Measurement & measurement);
 
   /**
-   * Add a new measurement with its information matrix and the ID of the landmark
+   * Add a new measurement with its information matrix and the ID of the landmark.
+   * The measurement can be of any of the types included in the Measurement variant.
+   * The measurement must include its information matrix.
    *
-   * @tparam Measurement The measurement type.
-   *         This method is only specialized for MeasyrementXY and MeasyrementSE2.
-   * @param measurement The MeasurementXY to add with its information matrix
+   * @param measurement The Measurement variant to add
    * @param landmark_id The ID of the landmark to associate the measurement with
    * @return false if the landmark_id does not exist in the graph
              or if the measurement's edge already exists
    */
-  template<typename Measurement>
   bool add_measurement(const Measurement & measurement, const unsigned int landmark_id);
 
   /** Remove all measurements from the graph */
@@ -134,9 +132,9 @@ private:
    * This method is templated to select the type of measurements (MeasurementXY / MeasurementSE2)
    * The association must be done separately for each type
    *
-   * @tparam Measurement The type of mesaurement.
+   * @tparam M The type of measurement.
    */
-  template<typename Measurement>
+  template<typename M>
   void associate_detached_measurements();
 
   /** Increase the ID counter used for the IDs.
@@ -159,10 +157,10 @@ private:
   /**
    * Private getter to access each of the different detached measurements list based on a template
    *
-   * @tparam Measurement The type of mesaurement. Only specialized for MeasurementXY / MeasurementSE2
+   * @tparam M The type of mesaurement. Only specialized for MeasurementXY / MeasurementSE2
    * @return a reference to the detached measurements vector
    */
-  template<typename Measurement>
+  template<typename M>
   std::vector<g2o::OptimizableGraph::Edge *> & get_detached_measurement();
 
   // G2O graph IDs and lookup tables

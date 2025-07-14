@@ -15,7 +15,7 @@ find_package(gpe_landmark_server REQUIRED)
 
 
 add_library(file_io INTERFACE)
-target_compile_features(file_io INTERFACE cxx_std_20)
+target_compile_features(file_io INTERFACE cxx_std_23)
 target_sources(file_io PUBLIC
   FILE_SET HEADERS
   BASE_DIRS
@@ -33,7 +33,7 @@ target_include_directories(se2_offline_estimation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
-target_compile_features(se2_offline_estimation_node PUBLIC c_std_99 cxx_std_20)
+target_compile_features(se2_offline_estimation_node PUBLIC c_std_99 cxx_std_23)
 target_link_libraries(se2_offline_estimation_node PRIVATE
   file_io
   Eigen3::Eigen

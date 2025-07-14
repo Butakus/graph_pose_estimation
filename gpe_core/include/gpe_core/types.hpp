@@ -18,11 +18,13 @@
 #ifndef GPE_CORE__TYPES_HPP_
 #define GPE_CORE__TYPES_HPP_
 
+#include <stdexcept>
+#include <variant>
+
 #include <Eigen/Dense>
 #include <g2o/types/slam2d/types_slam2d.h>
 
 #include <gpe_msgs/msg/landmark2_d_array.hpp>
-#include <stdexcept>
 #include <vision_msgs/msg/detection3_d.hpp>
 
 namespace gpe
@@ -133,7 +135,7 @@ public:
   MeasurementSE2(const vision_msgs::msg::Detection3D & detecion_msg)
   : inf_matrix(Eigen::Matrix3d::Identity())
   {
-    // There must be at least 1 detectio hypothesis. Only the first one will be used
+    // There must be at least 1 detection hypothesis. Only the first one will be used
     if (detecion_msg.results.size() == 0) {
       throw std::invalid_argument("Detection2D message has an empty list of hypothesis");
     }
@@ -164,6 +166,9 @@ public:
   g2o::SE2 data {};
   Eigen::Matrix3d inf_matrix {};
 };
+
+// A variant type union to hold together measurement types
+using Measurement = std::variant<MeasurementXY, MeasurementSE2>;
 
 // A type alias to access the Measurement's Edge inner type
 template<typename T>

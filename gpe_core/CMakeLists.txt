@@ -15,7 +15,7 @@ find_package(Eigen3 REQUIRED)
 find_package(g2o REQUIRED)
 
 add_library(gpe_utils INTERFACE)
-target_compile_features(gpe_utils INTERFACE cxx_std_20)
+target_compile_features(gpe_utils INTERFACE cxx_std_23)
 target_sources(gpe_utils PUBLIC
   FILE_SET HEADERS
   BASE_DIRS
@@ -30,7 +30,7 @@ target_link_libraries(gpe_utils INTERFACE
 )
 
 add_library(gpe_types INTERFACE)
-target_compile_features(gpe_types INTERFACE cxx_std_20)
+target_compile_features(gpe_types INTERFACE cxx_std_23)
 target_sources(gpe_types PUBLIC
   FILE_SET HEADERS
   BASE_DIRS
@@ -48,7 +48,7 @@ target_link_libraries(gpe_types INTERFACE
 add_library(gpe_hungarian SHARED
   src/hungarian.cpp
 )
-target_compile_features(gpe_hungarian PUBLIC cxx_std_20)
+target_compile_features(gpe_hungarian PUBLIC cxx_std_23)
 target_include_directories(gpe_hungarian PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -57,7 +57,7 @@ target_include_directories(gpe_hungarian PUBLIC
 add_library(gpe_se2_pose_estimation SHARED
   src/se2_pose_estimation.cpp
 )
-target_compile_features(gpe_se2_pose_estimation PUBLIC cxx_std_20)
+target_compile_features(gpe_se2_pose_estimation PUBLIC cxx_std_23)
 target_include_directories(gpe_se2_pose_estimation PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
