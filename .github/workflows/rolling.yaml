@@ -16,6 +16,8 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:noble
     steps:
       - name: Setup ROS 2
         uses: ros-tooling/setup-ros@0.7.15
