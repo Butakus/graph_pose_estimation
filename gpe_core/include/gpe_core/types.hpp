@@ -94,8 +94,8 @@ public:
   }
 
 
-  [[nodiscard]] double x() {return data.x();}
-  [[nodiscard]] double y() {return data.y();}
+  [[nodiscard]] double x() const {return data.x();}
+  [[nodiscard]] double y() const {return data.y();}
   void set_x(double x) {data.x() = x;}
   void set_y(double y) {data.y() = y;}
 
@@ -156,9 +156,9 @@ public:
     inf_matrix = cov_matrix.inverse();
   }
 
-  [[nodiscard]] double x() {return data.translation().x();}
-  [[nodiscard]] double y() {return data.translation().y();}
-  [[nodiscard]] double theta() {return data.rotation().angle();}
+  [[nodiscard]] double x() const {return data.translation().x();}
+  [[nodiscard]] double y() const {return data.translation().y();}
+  [[nodiscard]] double theta() const {return data.rotation().angle();}
   void set_x(double new_x) {data.setTranslation({new_x, y()});}
   void set_y(double new_y) {data.setTranslation({x(), new_y});}
   void set_theta(double new_theta) {data.setRotation(Eigen::Rotation2D(new_theta));}

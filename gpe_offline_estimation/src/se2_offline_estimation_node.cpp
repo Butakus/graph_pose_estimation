@@ -112,6 +112,7 @@ int main(int argc, char ** argv)
     std::cout << "Initial noisy pose:\n" << noisy_pose << std::endl;
     estimator.set_initial_pose(noisy_pose);
 
+    // TODO: This only works for LiDAR and XY landmark detections
     for (const auto & [idx, m] : measurements) {
       Eigen::Matrix2d inf_matrix;
       for (size_t i = 0; i < m.covariance.size(); i++) {
