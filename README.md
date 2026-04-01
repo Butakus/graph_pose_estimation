@@ -80,17 +80,9 @@ colcon test --packages-select gpe_msgs gpe_core gpe_landmark_server gpe_offline_
 colcon test-result --verbose
 ```
 
-## Running the Offline Estimation Executable
+## Running the offline estimation module
 
-After building and sourcing the workspace:
-
-```bash
-ros2 run gpe_offline_estimation se2_offline_estimation_node
-```
-
-Use `--ros-args -p <name>:=<value>` to pass any node parameters expected by the executable.
-
-For package-specific inputs, file formats, and test assets, see [gpe_offline_estimation/README.md](gpe_offline_estimation/README.md).
+Please see [gpe_offline_estimation/README.md](gpe_offline_estimation/README.md).
 
 ## License
 This project is licensed under the GNU Lesser General Public License v3.0 (LGPLv3).
