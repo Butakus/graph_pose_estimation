@@ -41,12 +41,12 @@ Example:
 ```yaml
 frame_id: map
 landmarks:
-	- id: 1
-		type: PointXY
-		coords: [1.0, 2.0]
-	- id: 2
-		type: Pose2D
-		coords: [3.5, -0.5, 1.57]
+    - id: 1
+        type: PointXY
+        coords: [1.0, 2.0]
+    - id: 2
+        type: Pose2D
+        coords: [3.5, -0.5, 1.57]
 ```
 
 ### 2) Poses CSV (`<measurements_dir>/poses.csv`)
