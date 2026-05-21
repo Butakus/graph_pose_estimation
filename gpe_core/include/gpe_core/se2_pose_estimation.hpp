@@ -110,11 +110,23 @@ public:
   void reset_measurements();
 
   /**
-   * Run the optimization and return the estimated pose.
+   * Run the optimization on the graph and return the estimated pose.
    * The estimated pose is saved as the initial estimation for the next call.
    * @return The estimated pose as a g2o::SE2 object.
    */
   g2o::SE2 estimate();
+
+  /**
+   * Run the Kabsch algorithm using the graph data and return the estimated pose.
+   * The estimated pose is saved as the initial estimation for the next call.
+   * This method exists purely as a comparison against the g2o optimizer and should not be used.
+   * It will reuse the same measurements and associations (hungarian method),
+   * then the Kabsch algorithm will be applied to estimate the pose.
+   * Information matrices are not used directly with Kabsch,
+   * but the Hungarian method considers them.
+   * @return The estimated pose as a g2o::SE2 object.
+   */
+  g2o::SE2 estimate_kabsch();
 
   /** Returns the last estimated pose */
   g2o::SE2 pose() const {return pose_;}

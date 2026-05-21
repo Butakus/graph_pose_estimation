@@ -16,9 +16,13 @@
 //  Author: Francisco Miguel Moreno
 
 #include <variant>
+#include <cmath>
+
+#include <Eigen/Dense>
 
 #include <gpe_core/types.hpp>
 #include <gpe_core/hungarian.hpp>
+#include <gpe_core/kabsch.hpp>
 #include <gpe_core/se2_pose_estimation.hpp>
 
 
@@ -159,8 +163,7 @@ gpe_msgs::msg::Landmark2DArray SE2PoseEstimation::get_landmarks() const
       l.y = position.y();
       l.theta = 0.0;
       landmarks.landmarks.push_back(l);
-    }
-    if (auto vertex_se2 = dynamic_cast<g2o::VertexSE2 *>(vertex); vertex_se2 != nullptr) {
+    } else if (auto vertex_se2 = dynamic_cast<g2o::VertexSE2 *>(vertex); vertex_se2 != nullptr) {
       // Only extract fixed vertices that have an ID different from the robot pose
       if (id != static_cast<int>(pose_id_) && vertex_se2->fixed()) {
         g2o::SE2 pose = vertex_se2->estimate();
@@ -365,6 +368,74 @@ g2o::SE2 SE2PoseEstimation::estimate()
 
   // Update initial_pose for next iteration
   pose_ = pose_vertex->estimate();
+
+  // Remove measurements, as they are not valid for the next iteration (pose is different)
+  reset_measurements();
+
+  return pose_;
+}
+
+g2o::SE2 SE2PoseEstimation::estimate_kabsch()
+{
+  // Run association algrithm to attach the measurements without landmark the graph
+  if (detached_measurements_xy_.size() > 0) {
+    associate_detached_measurements<MeasurementXY>();
+  }
+  if (detached_measurements_se2_.size() > 0) {
+    associate_detached_measurements<MeasurementSE2>();
+  }
+
+  // Count associated point pairs and allocate matrix columns.
+  size_t num_points = 0;
+  for (const auto & edge : optimizer_.edges()) {
+    if (auto edge_xy = dynamic_cast<g2o::EdgeSE2PointXY *>(edge); edge_xy != nullptr) {
+      if (dynamic_cast<g2o::VertexPointXY *>(edge_xy->vertex(1)) != nullptr) {
+        num_points++;
+      }
+    } else if (auto edge_se2 = dynamic_cast<g2o::EdgeSE2 *>(edge); edge_se2 != nullptr) {
+      if (dynamic_cast<g2o::VertexSE2 *>(edge_se2->vertex(1)) != nullptr) {
+        num_points++;
+      }
+    }
+  }
+
+  if (num_points > 0) {
+    Eigen::Matrix2Xd measured_points(2, num_points);
+    Eigen::Matrix2Xd landmark_points(2, num_points);
+
+    size_t col_idx = 0;
+    for (const auto & edge : optimizer_.edges()) {
+      if (auto edge_xy = dynamic_cast<g2o::EdgeSE2PointXY *>(edge); edge_xy != nullptr) {
+        auto landmark_vertex = dynamic_cast<g2o::VertexPointXY *>(edge_xy->vertex(1));
+        if (landmark_vertex != nullptr) {
+          measured_points.col(col_idx) = edge_xy->measurement();
+          landmark_points.col(col_idx) = landmark_vertex->estimate();
+          col_idx++;
+        }
+      } else if (auto edge_se2 = dynamic_cast<g2o::EdgeSE2 *>(edge); edge_se2 != nullptr) {
+        auto landmark_vertex = dynamic_cast<g2o::VertexSE2 *>(edge_se2->vertex(1));
+        if (landmark_vertex != nullptr) {
+          // TODO: Not considering the orientation part of the measurement
+          measured_points.col(col_idx) = edge_se2->measurement().translation();
+          landmark_points.col(col_idx) = landmark_vertex->estimate().translation();
+          col_idx++;
+        }
+      }
+    }
+
+    // Align landmarks and measurements using Kabsch algorithm
+    const auto transformation = kabsch_alignment<2>(measured_points, landmark_points);
+
+    // Update pose
+    const double yaw = std::atan2(transformation(1, 0), transformation(0, 0));
+    pose_ = g2o::SE2(transformation(0, 2), transformation(1, 2), yaw);
+    // Just in case, also update the pose vertex in the graph
+    // to keep it consistent with the internal state
+    auto pose_vertex = dynamic_cast<g2o::VertexSE2 *>(optimizer_.vertex(pose_id_));
+    if (pose_vertex != nullptr) {
+      pose_vertex->setEstimate(pose_);
+    }
+  }
 
   // Remove measurements, as they are not valid for the next iteration (pose is different)
   reset_measurements();

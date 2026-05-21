@@ -54,6 +54,18 @@ target_include_directories(gpe_hungarian PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
+add_library(gpe_kabsch INTERFACE)
+target_sources(gpe_kabsch PUBLIC
+  FILE_SET HEADERS
+  BASE_DIRS
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  FILES
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/kabsch.hpp>
+)
+target_link_libraries(gpe_kabsch INTERFACE
+  Eigen3::Eigen
+)
+
 add_library(gpe_se2_pose_estimation SHARED
   src/se2_pose_estimation.cpp
 )
@@ -68,6 +80,7 @@ target_link_libraries(gpe_se2_pose_estimation
   PRIVATE
     g2o::solver_cholmod
     gpe_hungarian
+    gpe_kabsch
 )
 
 install(
@@ -75,7 +88,7 @@ install(
   DESTINATION include
 )
 install(
-  TARGETS gpe_se2_pose_estimation gpe_hungarian gpe_utils gpe_types
+  TARGETS gpe_se2_pose_estimation gpe_hungarian gpe_utils gpe_types gpe_kabsch
   EXPORT export_${PROJECT_NAME}
   FILE_SET HEADERS
   ARCHIVE DESTINATION lib
