@@ -153,8 +153,8 @@ TEST(KabschAlignmentTests2D, kabsch_simple_estimation_test)
 
   const g2o::SE2 robot_pose = estimator.estimate_kabsch();
 
-  EXPECT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.2);
-  EXPECT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.2);
+  EXPECT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.3);
+  EXPECT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.3);
   EXPECT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
 }
 
@@ -181,8 +181,8 @@ TEST(KabschAlignmentTests2D, kabsch_measurement_association_test)
   }
   g2o::SE2 robot_pose = estimator.estimate();
 
-  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.25);
-  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.25);
+  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.3);
+  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.3);
   ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
 }
 

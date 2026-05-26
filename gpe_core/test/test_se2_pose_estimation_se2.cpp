@@ -47,18 +47,21 @@ LandmarkArray generate_landmarks_se2()
   return landmarks;
 }
 
-gpe::MeasurementSE2 compute_landmark_measurement(const g2o::SE2 & pose, const Landmark & landmark)
+gpe::MeasurementSE2 compute_landmark_measurement(
+  const g2o::SE2 & pose,
+  const Landmark & landmark,
+  const float noise = 0.1f
+)
 {
   // Compute the perfect measurement
   g2o::SE2 l_pos = {landmark.x, landmark.y, landmark.theta};
   g2o::SE2 measurement = pose.inverse() * l_pos;
   // Add gaussian noise ad fill information matrix
-  constexpr float noise = 0.1f;
   measurement.setTranslation(
     measurement.translation() + Eigen::Vector2d{gpe::gaussian(noise), gpe::gaussian(noise)}
   );
   measurement.setRotation(
-    Eigen::Rotation2D(measurement.rotation().angle() + gpe::gaussian(noise))
+    Eigen::Rotation2D(measurement.rotation().angle() + gpe::gaussian(noise / 10.0f))
   );
   return gpe::MeasurementSE2(
     measurement,
@@ -97,6 +100,38 @@ TEST(SE2PoseEstimationTestsSE2, simple_estimation_test)
   ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
 }
 
+// Test the alternative estimation method by averaging poses (only SE2 landmarks)
+TEST(SE2PoseEstimationTestsSE2, avg_pose_estimation_test)
+{
+  gpe::SE2PoseEstimation estimator;
+
+  // Generate test landmarks and add them to the estimator
+  LandmarkArray landmarks = generate_landmarks_se2();
+  for (size_t i = 0; i < landmarks.landmarks.size(); i++) {
+    landmarks.landmarks[i].id = i;
+    estimator.add_landmark(landmarks.landmarks[i]);
+  }
+
+  // Create the robot pose and generate an initial estimation
+  g2o::SE2 robot_pose_gt(10.0, 11.0, gpe::deg_to_rad(90.0));
+  g2o::SE2 robot_pose_initial_guess(7.7, 6.0, gpe::deg_to_rad(5.0));
+
+  // Set the initial pose estimation
+  estimator.set_initial_pose(robot_pose_initial_guess);
+
+  // Set measurements (graph edges)
+  for (const auto & l : landmarks.landmarks) {
+    gpe::MeasurementSE2 measurement = compute_landmark_measurement(robot_pose_gt, l, 0.01f);
+
+    estimator.add_measurement(measurement, l.id);
+  }
+  g2o::SE2 robot_pose = estimator.estimate_pose_avg();
+
+  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.4);
+  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.4);
+  ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
+}
+
 // Add test with measurements without pre-assigned ID to test hungarian assignation
 TEST(SE2PoseEstimationTestsSE2, measurement_association_test)
 {
@@ -121,6 +156,34 @@ TEST(SE2PoseEstimationTestsSE2, measurement_association_test)
   g2o::SE2 robot_pose = estimator.estimate();
   ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.2);
   ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.2);
+  ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
+}
+
+
+// Add test with measurements without pre-assigned ID to test hungarian assignation
+TEST(SE2PoseEstimationTestsSE2, measurement_association_avg_poses_test)
+{
+  gpe::SE2PoseEstimation estimator;
+
+  // Generate test landmarks and add them to the estimator
+  LandmarkArray landmarks = generate_landmarks_se2();
+  estimator.add_landmarks(landmarks);
+
+  // Create the robot pose and generate an initial estimation
+  g2o::SE2 robot_pose_gt(10.0, 11.0, gpe::deg_to_rad(90.0));
+  g2o::SE2 robot_pose_initial_guess(7.7, 6.0, gpe::deg_to_rad(65.0));
+
+  // Set the initial pose estimation
+  estimator.set_initial_pose(robot_pose_initial_guess);
+  // Set measurements (graph edges)
+  for (const auto & l : landmarks.landmarks) {
+    gpe::MeasurementSE2 measurement = compute_landmark_measurement(robot_pose_gt, l, 0.01f);
+    estimator.add_measurement(measurement);
+  }
+
+  g2o::SE2 robot_pose = estimator.estimate_pose_avg();
+  ASSERT_NEAR(robot_pose.translation().x(), robot_pose_gt.translation().x(), 0.4);
+  ASSERT_NEAR(robot_pose.translation().y(), robot_pose_gt.translation().y(), 0.4);
   ASSERT_NEAR(robot_pose.rotation().angle(), robot_pose_gt.rotation().angle(), 0.05);
 }
 

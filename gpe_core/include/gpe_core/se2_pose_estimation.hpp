@@ -119,14 +119,36 @@ public:
   /**
    * Run the Kabsch algorithm using the graph data and return the estimated pose.
    * The estimated pose is saved as the initial estimation for the next call.
+   *
    * This method exists purely as a comparison against the g2o optimizer and should not be used.
-   * It will reuse the same measurements and associations (hungarian method),
+   * It will reuse the same measurements and associations (hungarian method) from the graph,
    * then the Kabsch algorithm will be applied to estimate the pose.
    * Information matrices are not used directly with Kabsch,
    * but the Hungarian method considers them.
+   *
+   * NOTE: This method will ONLY use measurements with type MeasurementXY (only points).
+   *       It does not make sense to perform Kabsch with MeasurementSE2, so they are ignored.
    * @return The estimated pose as a g2o::SE2 object.
    */
   g2o::SE2 estimate_kabsch();
+
+
+  /**
+   * Estimate the robot pose by averaging the estimations from SE2 measurements.
+   * The estimated pose is saved as the initial estimation for the next call.
+   *
+   * This method exists purely as a comparison against the g2o optimizer and should not be used.
+   * It will reuse the same measurements and associations (hungarian method) from the graph.
+   *
+   * Then, each MeasurementSE2 is used to estimate the robot pose.
+   * The final pose estimation is the weighted average of all the individual estimations.
+   * The weights are given by the chi-squared error computed by G2O.
+   *
+   * NOTE: This method will ONLY use measurements with type MeasurementXY (only points).
+   *       It does not make sense to perform Kabsch with MeasurementSE2, so they are ignored.
+   * @return The estimated pose as a g2o::SE2 object.
+   */
+  g2o::SE2 estimate_pose_avg();
 
   /** Returns the last estimated pose */
   g2o::SE2 pose() const {return pose_;}

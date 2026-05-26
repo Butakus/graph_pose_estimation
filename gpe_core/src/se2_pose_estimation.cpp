@@ -381,19 +381,12 @@ g2o::SE2 SE2PoseEstimation::estimate_kabsch()
   if (detached_measurements_xy_.size() > 0) {
     associate_detached_measurements<MeasurementXY>();
   }
-  if (detached_measurements_se2_.size() > 0) {
-    associate_detached_measurements<MeasurementSE2>();
-  }
 
   // Count associated point pairs and allocate matrix columns.
   size_t num_points = 0;
   for (const auto & edge : optimizer_.edges()) {
     if (auto edge_xy = dynamic_cast<g2o::EdgeSE2PointXY *>(edge); edge_xy != nullptr) {
       if (dynamic_cast<g2o::VertexPointXY *>(edge_xy->vertex(1)) != nullptr) {
-        num_points++;
-      }
-    } else if (auto edge_se2 = dynamic_cast<g2o::EdgeSE2 *>(edge); edge_se2 != nullptr) {
-      if (dynamic_cast<g2o::VertexSE2 *>(edge_se2->vertex(1)) != nullptr) {
         num_points++;
       }
     }
@@ -412,14 +405,6 @@ g2o::SE2 SE2PoseEstimation::estimate_kabsch()
           landmark_points.col(col_idx) = landmark_vertex->estimate();
           col_idx++;
         }
-      } else if (auto edge_se2 = dynamic_cast<g2o::EdgeSE2 *>(edge); edge_se2 != nullptr) {
-        auto landmark_vertex = dynamic_cast<g2o::VertexSE2 *>(edge_se2->vertex(1));
-        if (landmark_vertex != nullptr) {
-          // TODO: Not considering the orientation part of the measurement
-          measured_points.col(col_idx) = edge_se2->measurement().translation();
-          landmark_points.col(col_idx) = landmark_vertex->estimate().translation();
-          col_idx++;
-        }
       }
     }
 
@@ -429,6 +414,87 @@ g2o::SE2 SE2PoseEstimation::estimate_kabsch()
     // Update pose
     const double yaw = std::atan2(transformation(1, 0), transformation(0, 0));
     pose_ = g2o::SE2(transformation(0, 2), transformation(1, 2), yaw);
+    // Just in case, also update the pose vertex in the graph
+    // to keep it consistent with the internal state
+    auto pose_vertex = dynamic_cast<g2o::VertexSE2 *>(optimizer_.vertex(pose_id_));
+    if (pose_vertex != nullptr) {
+      pose_vertex->setEstimate(pose_);
+    }
+  }
+
+  // Remove measurements, as they are not valid for the next iteration (pose is different)
+  reset_measurements();
+
+  return pose_;
+}
+
+g2o::SE2 SE2PoseEstimation::estimate_pose_avg()
+{
+  // Run association algrithm to attach the measurements without landmark the graph
+  if (detached_measurements_se2_.size() > 0) {
+    associate_detached_measurements<MeasurementSE2>();
+  }
+
+  std::vector<g2o::SE2> estimated_poses;
+  std::vector<double> weights_x;
+  std::vector<double> weights_y;
+  std::vector<double> weights_theta;
+
+  // Extract relative poses and weights from the graph edges
+  for (const auto & edge : optimizer_.edges()) {
+    if (auto edge_se2 = dynamic_cast<g2o::EdgeSE2 *>(edge); edge_se2 != nullptr) {
+      const auto vertex_se2 = dynamic_cast<g2o::VertexSE2 *>(edge_se2->vertex(1));
+      if (vertex_se2 != nullptr) {
+        const g2o::SE2 measurement = edge_se2->measurement();
+        const g2o::SE2 landmark = vertex_se2->estimate();
+        // Compute the relative pose from the robot to the landmark
+        const g2o::SE2 estimated_pose = landmark * measurement.inverse();
+
+        // Use the measurement information matrix as the weight for averaging
+        const Eigen::Matrix3d info_matrix = edge_se2->information();
+        const double weight_x = info_matrix(0, 0);
+        const double weight_y = info_matrix(1, 1);
+        const double weight_theta = info_matrix(2, 2);
+        weights_x.push_back(weight_x);
+        weights_y.push_back(weight_y);
+        weights_theta.push_back(weight_theta);
+
+        // Update the pose estimation by averaging the relative pose with the current estimate
+        estimated_poses.push_back(estimated_pose);
+      }
+    }
+  }
+
+  // Compute the weighted average of the estimated poses
+  if (estimated_poses.size() > 0) {
+    double total_weight_x = 0.0;
+    double total_weight_y = 0.0;
+    double total_weight_theta = 0.0;
+    double avg_x = 0.0;
+    double avg_y = 0.0;
+    // For averaging angles, we use the x and y components of the unit circle
+    double avg_theta_x = 0.0;
+    double avg_theta_y = 0.0;
+
+    for (size_t i = 0; i < estimated_poses.size(); i++) {
+      // Update weight sum
+      total_weight_x += weights_x[i];
+      total_weight_y += weights_y[i];
+      total_weight_theta += weights_theta[i];
+
+      // Update averages
+      avg_x += estimated_poses[i].translation().x() * weights_x[i];
+      avg_y += estimated_poses[i].translation().y() * weights_y[i];
+      avg_theta_x += std::cos(estimated_poses[i].rotation().angle()) * weights_theta[i];
+      avg_theta_y += std::sin(estimated_poses[i].rotation().angle()) * weights_theta[i];
+    }
+    avg_x /= total_weight_x;
+    avg_y /= total_weight_y;
+    avg_theta_x /= total_weight_theta;
+    avg_theta_y /= total_weight_theta;
+    const double avg_theta = std::atan2(avg_theta_y, avg_theta_x);
+
+    pose_ = g2o::SE2(avg_x, avg_y, avg_theta);
     // Just in case, also update the pose vertex in the graph
     // to keep it consistent with the internal state
     auto pose_vertex = dynamic_cast<g2o::VertexSE2 *>(optimizer_.vertex(pose_id_));
