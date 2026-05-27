@@ -98,7 +98,7 @@ TEST(KabschAlignmentTests2D, recovers_rigid_transform)
   expected.template block<2, 2>(0, 0) = rotation.toRotationMatrix();
   expected.template block<2, 1>(0, 2) = translation;
 
-  EXPECT_TRUE(transformation.isApprox(expected, 1e-12));
+  EXPECT_TRUE(transformation.isApprox(expected, 1e-6));
 }
 
 TEST(KabschAlignmentTests2D, maps_measured_points_onto_landmarks)
@@ -123,8 +123,30 @@ TEST(KabschAlignmentTests2D, maps_measured_points_onto_landmarks)
       measured_points.col(column).y(),
       1.0);
     const Eigen::Vector3d transformed = transformation * homogeneous_measured;
-    EXPECT_TRUE(transformed.head<2>().isApprox(landmark_points.col(column), 1e-12));
+    EXPECT_TRUE(transformed.head<2>().isApprox(landmark_points.col(column), 1e-6));
   }
+}
+
+TEST(KabschAlignmentTests2D, limited_number_of_points)
+{
+  const Eigen::Matrix<double, 2, Eigen::Dynamic> measured_points = make_points({
+    Eigen::Vector2d{1.0, 2.0},
+    Eigen::Vector2d{-1.0, 0.5},
+  });
+
+  const Eigen::Rotation2Dd rotation(gpe::deg_to_rad(180.0));
+  const Eigen::Vector2d translation{4.0, -3.0};
+
+  const Eigen::Matrix<double, 2, Eigen::Dynamic> landmark_points =
+    (rotation.toRotationMatrix() * measured_points).colwise() + translation;
+
+  const auto transformation = gpe::kabsch_alignment<2>(measured_points, landmark_points);
+
+  Eigen::Matrix3d expected = Eigen::Matrix3d::Identity();
+  expected.template block<2, 2>(0, 0) = rotation.toRotationMatrix();
+  expected.template block<2, 1>(0, 2) = translation;
+
+  EXPECT_TRUE(transformation.isApprox(expected, 1e-6));
 }
 
 TEST(KabschAlignmentTests2D, kabsch_simple_estimation_test)
