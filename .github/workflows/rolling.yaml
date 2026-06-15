@@ -17,10 +17,9 @@ jobs:
   build-and-test:
     runs-on: ubuntu-26.04
     container:
-      image: ubuntu:resolute
+      # Use the pre-built setup-ros-docker image here instead of standard ubuntu
+      image: ghcr.io/ros-tooling/setup-ros-docker/ubuntu-resolute-ros-rolling-ros-base
     steps:
-      - name: Setup ROS 2
-        uses: ros-tooling/setup-ros@0.7.19
       - name: Build and test
         uses: ros-tooling/action-ros-ci@0.4.8
         with:
