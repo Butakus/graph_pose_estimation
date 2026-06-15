@@ -15,14 +15,14 @@ on:
       - cron: '0 0 * * 1'
 jobs:
   build-and-test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     container:
-      image: ubuntu:noble
+      image: ubuntu:resolute
     steps:
       - name: Setup ROS 2
-        uses: ros-tooling/setup-ros@0.7.15
+        uses: ros-tooling/setup-ros@0.7.19
       - name: Build and test
-        uses: ros-tooling/action-ros-ci@0.4.5
+        uses: ros-tooling/action-ros-ci@0.4.8
         with:
           package-name: gpe_core gpe_msgs gpe_landmark_server gpe_offline_estimation
           import-token: ${{ secrets.GITHUB_TOKEN }}
