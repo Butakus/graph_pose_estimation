@@ -18,8 +18,10 @@ Messages:
 - `Landmark2DArray.msg`
 - `Landmark3D.msg`
 - `Landmark3DArray.msg`
-- `LandmarkDetection.msg`
-- `LandmarkDetectionArray.msg`
+- `LandmarkDetection2D.msg`
+- `LandmarkDetection2DArray.msg`
+- `LandmarkDetection3D.msg`
+- `LandmarkDetection3DArray.msg`
 
 ### `gpe_core`
 Core estimation package with reusable C++ libraries.

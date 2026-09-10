@@ -15,8 +15,10 @@ set(msg_files
   "msg/Landmark2DArray.msg"
   "msg/Landmark3D.msg"
   "msg/Landmark3DArray.msg"
-  "msg/LandmarkDetection.msg"
-  "msg/LandmarkDetectionArray.msg"
+  "msg/LandmarkDetection2D.msg"
+  "msg/LandmarkDetection2DArray.msg"
+  "msg/LandmarkDetection3D.msg"
+  "msg/LandmarkDetection3DArray.msg"
 )
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}

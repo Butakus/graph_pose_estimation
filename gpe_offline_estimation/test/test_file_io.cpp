@@ -28,6 +28,7 @@ namespace gpe
 // Paths
 const fs::path landmarks_path = TEST_DIRECTORY / fs::path("data/test_landmarks.yaml");
 const fs::path measurements_path_dir = TEST_DIRECTORY / fs::path("data/measurements");
+const fs::path measurements_path_dir_se2 = TEST_DIRECTORY / fs::path("data/measurements_se2");
 
 
 /** Test find_measurement_files function from <gpe_offline_estimation/file_io.hpp> */
@@ -60,11 +61,12 @@ TEST(FileParsingTests, load_landmarks)
 
 /** Test measurements CSV parsing
   Contents of file measurements_1717000001.csv:
-  1;-1.2940;3.1875;0.0100;0.0000;0.0000;0.0100
-  2;17.6870;-4.2482;0.0100;0.0000;0.0000;0.0100
-  3;10.0300;-7.1356;0.0100;0.0000;0.0000;0.0100
-  5;-5.9279;-7.9884;0.0100;0.0000;0.0000;0.0100
-  6;0.4598;-17.1013;0.0100;0.0000;0.0000;0.0100
+  id;type;x;y;theta;covariance[0];...;covariance[8]
+  1;0;-1.2940;3.1875;0.0;0.0100;0.0000;0.0000;0.0000;0.0100;0.0000;0.0000;0.0000;0.0000
+  2;0;17.6870;-4.2482;0.0;0.0100;0.0000;0.0000;0.0000;0.0100;0.0000;0.0000;0.0000;0.0000
+  3;0;10.0300;-7.1356;0.0;0.0100;0.0000;0.0000;0.0000;0.0100;0.0000;0.0000;0.0000;0.0000
+  5;0;-5.9279;-7.9884;0.0;0.0100;0.0000;0.0000;0.0000;0.0100;0.0000;0.0000;0.0000;0.0000
+  6;0;0.4598;-17.1013;0.0;0.0100;0.0000;0.0000;0.0000;0.0100;0.0000;0.0000;0.0000;0.0000
 */
 TEST(FileParsingTests, parse_measurements)
 {
@@ -76,15 +78,42 @@ TEST(FileParsingTests, parse_measurements)
   EXPECT_FALSE(measurements.find(3) == measurements.end());
   EXPECT_FALSE(measurements.find(5) == measurements.end());
   EXPECT_FALSE(measurements.find(6) == measurements.end());
-  EXPECT_NEAR(measurements[5].x, -5.9279, 1e-4);
-  EXPECT_NEAR(measurements[1].y, 3.1875, 1e-4);
+  EXPECT_NEAR(measurements[5].landmark.x, -5.9279, 1e-4);
+  EXPECT_NEAR(measurements[1].landmark.y, 3.1875, 1e-4);
   for (const auto & [id, l] : measurements) {
-    EXPECT_EQ(id, l.id);
+    EXPECT_EQ(id, l.landmark.id);
+    EXPECT_EQ(l.landmark.type, gpe_msgs::msg::Landmark2D::TYPE_XY);
     EXPECT_NEAR(l.covariance[0], 0.01, 1e-3);
     EXPECT_EQ(l.covariance[1], 0.0);
-    EXPECT_EQ(l.covariance[2], 0.0);
-    EXPECT_NEAR(l.covariance[3], 0.01, 1e-3);
+    EXPECT_EQ(l.covariance[3], 0.0);
+    EXPECT_NEAR(l.covariance[4], 0.01, 1e-3);
+    EXPECT_EQ(l.covariance[8], 0.0);
   }
+}
+
+/** Test SE2 measurements CSV parsing */
+TEST(FileParsingTests, parse_measurements_se2)
+{
+  fs::path csv_path = measurements_path_dir_se2 / fs::path("measurements_1717000001.csv");
+  auto measurements = parse_measurements(csv_path);
+  EXPECT_EQ(measurements.size(), 5);
+  EXPECT_FALSE(measurements.find(1) == measurements.end());
+  EXPECT_FALSE(measurements.find(2) == measurements.end());
+  EXPECT_FALSE(measurements.find(3) == measurements.end());
+  EXPECT_FALSE(measurements.find(5) == measurements.end());
+  EXPECT_FALSE(measurements.find(6) == measurements.end());
+  EXPECT_NEAR(measurements[5].landmark.x, -5.9279, 1e-4);
+  EXPECT_NEAR(measurements[1].landmark.y, 3.1875, 1e-4);
+  for (const auto & [id, l] : measurements) {
+    EXPECT_EQ(id, l.landmark.id);
+    EXPECT_EQ(l.landmark.type, gpe_msgs::msg::Landmark2D::TYPE_SE2);
+    EXPECT_NEAR(l.covariance[0], 0.01, 1e-3);
+    EXPECT_EQ(l.covariance[1], 0.0);
+    EXPECT_EQ(l.covariance[3], 0.0);
+    EXPECT_NEAR(l.covariance[4], 0.01, 1e-3);
+    EXPECT_NEAR(l.covariance[8], 0.04, 1e-3);
+  }
+  EXPECT_NEAR(measurements[3].landmark.theta, 0.75, 1e-4);
 }
 
 /** Test poses CSV parsing

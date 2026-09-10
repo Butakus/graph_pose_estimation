@@ -20,7 +20,7 @@
 #include <filesystem>
 #include <gpe_core/utils.hpp>
 #include <gpe_core/se2_pose_estimation.hpp>
-#include <gpe_msgs/msg/landmark_detection.hpp>
+#include <gpe_msgs/msg/landmark_detection2_d.hpp>
 #include <gpe_landmark_server/landmark_io.hpp>
 #include <rcutils/cmdline_parser.h>
 #include <gpe_offline_estimation/file_io.hpp>
@@ -89,7 +89,7 @@ int main(int argc, char ** argv)
   std::map<int64_t, Eigen::Vector3d> output_poses;
 
   // Load and process measurements
-  using Measurements = std::map<int, gpe_msgs::msg::LandmarkDetection>;
+  using Measurements = std::map<int, gpe_msgs::msg::LandmarkDetection2D>;
   auto measurement_files = gpe::find_measurement_files(measurements_path);
   std::cout << "Number of measurement CSV files: " << measurement_files.size() << std::endl;
   for (const auto & [timestamp, measurement_file] : measurement_files) {
@@ -112,15 +112,26 @@ int main(int argc, char ** argv)
     std::cout << "Initial noisy pose:\n" << noisy_pose << std::endl;
     estimator.set_initial_pose(noisy_pose);
 
-    // TODO: This only works for LiDAR and XY landmark detections
     for (const auto & [idx, m] : measurements) {
-      Eigen::Matrix2d inf_matrix;
-      for (size_t i = 0; i < m.covariance.size(); i++) {
-        inf_matrix(i) = m.covariance[i];
+      if (m.landmark.type == gpe_msgs::msg::Landmark2D::TYPE_XY) {
+        Eigen::Matrix2d cov_matrix;
+        cov_matrix(0, 0) = m.covariance[0];
+        cov_matrix(0, 1) = m.covariance[1];
+        cov_matrix(1, 0) = m.covariance[3];
+        cov_matrix(1, 1) = m.covariance[4];
+        gpe::MeasurementXY measurement({m.landmark.x, m.landmark.y}, cov_matrix.inverse());
+        estimator.add_measurement(measurement, idx);
+      } else if (m.landmark.type == gpe_msgs::msg::Landmark2D::TYPE_SE2) {
+        Eigen::Matrix3d cov_matrix;
+        for (size_t row = 0; row < 3; row++) {
+          for (size_t col = 0; col < 3; col++) {
+            cov_matrix(row, col) = m.covariance[row * 3 + col];
+          }
+        }
+        gpe::MeasurementSE2 measurement(
+          g2o::SE2(m.landmark.x, m.landmark.y, m.landmark.theta), cov_matrix.inverse());
+        estimator.add_measurement(measurement, idx);
       }
-      inf_matrix = inf_matrix.inverse();
-      gpe::MeasurementXY measurement({m.x, m.y}, inf_matrix);
-      estimator.add_measurement(measurement, idx);
     }
 
     // Estimate pose

@@ -23,6 +23,10 @@ MEASUREMENTS_DIR = 'measurements'
 POSES_FILE = 'measurements/poses.csv'
 MAX_RANGE = 20.0
 ERROR_STD = 0.1
+THETA_ERROR_STD = 0.2
+TYPE_XY = 0
+TYPE_SE2 = 1
+MEASUREMENT_TYPE = TYPE_XY
 
 
 def load_landmarks():
@@ -78,14 +82,14 @@ def detect_landmarks(landmarks, ids, pose):
     return relative_landmarks, ids
 
 
-def save_measurements(timestamp, measurements, ids):
+def save_measurements(timestamp, measurements, ids, measurement_type):
     filename = F'measurements_{timestamp}.csv'
     measurement_file = os.path.join(MEASUREMENTS_DIR, filename)
-    covariance = [ERROR_STD**2, 0.0, 0.0, ERROR_STD**2]
+    covariance = np.diag([ERROR_STD**2, ERROR_STD**2, THETA_ERROR_STD**2]).flatten()
     data_lines = []
     # Iterate to apply custom float formatting
     for i, m in zip(ids, measurements):
-        line = [i, F'{m[0]:.4f}', F'{m[1]:.4f}']
+        line = [i, measurement_type, F'{m[0]:.4f}', F'{m[1]:.4f}', F'{0.0:.4f}']
         line += [F'{x:.4f}' for x in covariance]
         data_lines.append(line)
     with open(measurement_file, 'w') as out_csv:
@@ -113,7 +117,7 @@ def main():
         print('Measurements [ID -> Detection]:')
         for m, i in zip(measurements, detected_ids):
             print(F'{i:2d} -> {m}')
-        save_measurements(t, measurements, detected_ids)
+        save_measurements(t, measurements, detected_ids, MEASUREMENT_TYPE)
 
 
 if __name__ == '__main__':

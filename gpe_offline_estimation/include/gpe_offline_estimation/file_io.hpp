@@ -23,7 +23,8 @@
 #include <map>
 #include <filesystem>
 #include <Eigen/Dense>
-#include <gpe_msgs/msg/landmark_detection.hpp>
+#include <gpe_msgs/msg/landmark_detection2_d.hpp>
+#include <gpe_msgs/msg/landmark_detection3_d.hpp>
 
 namespace gpe
 {
@@ -76,11 +77,11 @@ inline std::map<int64_t, Eigen::Vector3d> parse_poses(
   return poses;
 }
 
-/** Parse the CSV file containing the landmark measurements and return a <ID, landmark> map */
-inline std::map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
+/** Parse the CSV file containing the 2D landmark measurements and return a <ID, landmark> map */
+inline std::map<int, gpe_msgs::msg::LandmarkDetection2D> parse_measurements(
   const std::filesystem::path & measurement_file)
 {
-  std::map<int, gpe_msgs::msg::LandmarkDetection> measurements;
+  std::map<int, gpe_msgs::msg::LandmarkDetection2D> measurements;
 
   std::ifstream in_file(measurement_file);
   if (!in_file.is_open()) {
@@ -90,13 +91,16 @@ inline std::map<int, gpe_msgs::msg::LandmarkDetection> parse_measurements(
   std::string line;
   while (std::getline(in_file, line)) {
     std::istringstream ss(line);
-    gpe_msgs::msg::LandmarkDetection l;
+    gpe_msgs::msg::LandmarkDetection2D l;
     char sep; // To read and skip CSV separator
-    ss >> l.id >> sep >> l.x >> sep >> l.y;
-    for (int i = 0; i < 4; i++) {
+    uint32_t type;
+    ss >> l.landmark.id >> sep >> type >> sep >> l.landmark.x >> sep >> l.landmark.y >> sep
+       >> l.landmark.theta;
+    for (size_t i = 0; i < l.covariance.size(); i++) {
       ss >> sep >> l.covariance[i];
     }
-    measurements.insert({l.id, l});
+    l.landmark.type = static_cast<uint8_t>(type);
+    measurements.insert({l.landmark.id, l});
   }
 
   return measurements;
