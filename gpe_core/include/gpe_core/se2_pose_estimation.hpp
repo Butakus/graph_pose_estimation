@@ -144,8 +144,9 @@ public:
    * The final pose estimation is the weighted average of all the individual estimations.
    * The weights are given by the chi-squared error computed by G2O.
    *
-   * NOTE: This method will ONLY use measurements with type MeasurementXY (only points).
-   *       It does not make sense to perform Kabsch with MeasurementSE2, so they are ignored.
+   * NOTE: This method will ONLY use measurements with type MeasurementSE2 (only poses).
+   *       It does not make sense to perform average estimation with MeasurementXY
+   *       (not enough info), so they are ignored.
    * @return The estimated pose as a g2o::SE2 object.
    */
   g2o::SE2 estimate_pose_avg();

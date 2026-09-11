@@ -145,7 +145,31 @@ TEST(FileParsingTests, parse_poses)
   EXPECT_NEAR(poses_map[1717000003][2], 0.7, 1e-4);
 }
 
-// TODO: Add tests for write_poses() function.
+/** Test write_poses() function */
+TEST(FileParsingTests, write_poses)
+{
+  fs::path out_path = measurements_path_dir / fs::path("poses_out_test.csv");
+
+  std::map<int64_t, Eigen::Vector3d> poses_map;
+  poses_map[1717000001] = {14.1, 14.2, -1.1};
+  poses_map[1717000002] = {14.0, 6.9, 1.2};
+  poses_map[1717000003] = {10.2, -5.2, 0.7};
+
+  write_poses(poses_map, out_path);
+
+  ASSERT_TRUE(fs::exists(out_path));
+
+  auto read_back = parse_poses(out_path);
+  EXPECT_EQ(read_back.size(), poses_map.size());
+  for (const auto & [timestamp, pose] : poses_map) {
+    ASSERT_FALSE(read_back.find(timestamp) == read_back.end());
+    EXPECT_NEAR(read_back[timestamp][0], pose[0], 1e-4);
+    EXPECT_NEAR(read_back[timestamp][1], pose[1], 1e-4);
+    EXPECT_NEAR(read_back[timestamp][2], pose[2], 1e-4);
+  }
+
+  fs::remove(out_path);
+}
 
 }  // namespace gpe
 
