@@ -24,14 +24,41 @@
 #include <gpe_landmark_server/landmark_io.hpp>
 #include <rcutils/cmdline_parser.h>
 #include <gpe_offline_estimation/file_io.hpp>
+#include <string>
+#include <vector>
 
 namespace fs = std::filesystem;
 
 void print_usage()
 {
   std::cout << "Usage: se2_offline_estimation "
-            << "[landmarks_file] [detections_dir]"
+            << "[landmarks_file] [detections_dir] [--kabsch | --pose-avg] [--output output_file]"
             << std::endl;
+}
+
+enum class EstimationMethod
+{
+  G2O,
+  KABSCH,
+  POSE_AVG
+};
+
+/// Collect positional arguments, skipping known flags/options and their values.
+std::vector<std::string> get_positional_args(int argc, char ** argv)
+{
+  std::vector<std::string> positional_args;
+  for (int i = 1; i < argc; i++) {
+    std::string arg = argv[i];
+    if (arg == "--kabsch" || arg == "--pose-avg" || arg == "-h") {
+      continue;
+    }
+    if (arg == "--output") {
+      i++;  // Skip the option's value too
+      continue;
+    }
+    positional_args.push_back(arg);
+  }
+  return positional_args;
 }
 
 
@@ -56,16 +83,36 @@ int main(int argc, char ** argv)
     return 0;
   }
 
-  fs::path landmarks_path = argv[1];
-  fs::path measurements_path = argv[2];
+  std::vector<std::string> positional_args = get_positional_args(argc, argv);
+  if (positional_args.size() < 2) {
+    std::cerr << "ERROR: Missing landmarks_file and/or detections_dir arguments" << std::endl;
+    print_usage();
+    return 1;
+  }
+  fs::path landmarks_path = positional_args[0];
+  fs::path measurements_path = positional_args[1];
 
   std::cout << "Path to landmarks: " << landmarks_path << std::endl;
   std::cout << "Path to measurements: " << measurements_path << std::endl;
 
-  // if (rcutils_cli_option_exist(argv, argv + argc, "--init")) {
-  //   auto init_option = rcutils_cli_get_option(argv, argv + argc, "--init");
-  //   std::cout << "Init option? -> " << init_option << std::endl;
-  // }
+  // Select estimation method (defaults to g2o-based estimation)
+  EstimationMethod method = EstimationMethod::G2O;
+  bool kabsch_option = rcutils_cli_option_exist(argv, argv + argc, "--kabsch");
+  bool pose_avg_option = rcutils_cli_option_exist(argv, argv + argc, "--pose-avg");
+  if (kabsch_option && pose_avg_option) {
+    std::cerr << "ERROR: --kabsch and --pose-avg are mutually exclusive" << std::endl;
+    return 1;
+  } else if (kabsch_option) {
+    method = EstimationMethod::KABSCH;
+  } else if (pose_avg_option) {
+    method = EstimationMethod::POSE_AVG;
+  }
+
+  // Output file path (defaults to output_poses.csv inside the measurements directory)
+  fs::path output_poses_file = measurements_path / fs::path("output_poses.csv");
+  if (rcutils_cli_option_exist(argv, argv + argc, "--output")) {
+    output_poses_file = rcutils_cli_get_option(argv, argv + argc, "--output");
+  }
 
   // Load map of landmarks from YAML file
   auto landmarks_map = gpe::load_landmarks_2d(landmarks_path);
@@ -135,7 +182,18 @@ int main(int argc, char ** argv)
     }
 
     // Estimate pose
-    g2o::SE2 robot_pose = estimator.estimate();
+    g2o::SE2 robot_pose;
+    switch (method) {
+      case EstimationMethod::KABSCH:
+        robot_pose = estimator.estimate_kabsch();
+        break;
+      case EstimationMethod::POSE_AVG:
+        robot_pose = estimator.estimate_pose_avg();
+        break;
+      default:
+        robot_pose = estimator.estimate();
+        break;
+    }
     std::cout << "Estimated pose: "
               << robot_pose.translation().x() << ", "
               << robot_pose.translation().y() << " | "
@@ -145,8 +203,6 @@ int main(int argc, char ** argv)
   }
 
   // Save all estimated poses to output file
-  // TODO: Allow output file path to be set from commandline arguments
-  fs::path output_poses_file = measurements_path / fs::path("output_poses.csv");
   gpe::write_poses(output_poses, output_poses_file);
 
   return 0;
